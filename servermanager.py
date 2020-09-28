@@ -3,12 +3,16 @@ from enum import Enum
 import os
 
 class ServerManager:
-    def __init__(self, jarPath, javapath = "/usr/bin/java", minRAM="-Xms2G", maxRAM="-XMS8G"):
+    def __init__(self, jarPath, javapath, minRAM, maxRAM):
         self.__java = javapath
         self.__jarPath = jarPath 
         self.__dirPath = os.path.dirname(jarPath)
         self.__subprocess = None
         self.__serverstate = ServerState.DOWN
+        
+        minRAM = "-Xms" + str(minRAM) + "G"
+        maxRAM = "-Xmx" + str(maxRAM) + "G"
+
         self.__serverargs = [javapath, minRAM, maxRAM, "-jar", jarPath]
 
     def getState(self):
@@ -36,10 +40,11 @@ class ServerManager:
 
     def forcekill(self):
         self.__subprocess.kill()
-        self.__serverstate = ServerState.DOWN
+        self.__serverstate = ServerState.KILLED
 
 
 class ServerState(Enum):
-    RUNNING = 1
-    PROCESSING = 0
-    DOWN = -1
+    RUNNING = 2
+    PROCESSING = 1
+    DOWN = 0
+    KILLED = -1
