@@ -7,6 +7,7 @@ class Logger:
         self.__file = None
         self.writeToLog("Starting the Logger!")
 
+    #Opening and closing the file in the function so the log gets updated immediatly
     def writeToLog(self,message):
         self.__file = open(self.__path,"a")
 
@@ -18,6 +19,8 @@ class Logger:
 
         self.__file.close()
 
+    #"Closing" the log
+    #Just to add a divide between the end of the current log and the beggining of the next log
     def endLog(self):
         self.writeToLog("Closing the log!\n\n")
 

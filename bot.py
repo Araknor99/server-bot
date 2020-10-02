@@ -9,6 +9,9 @@ TOKENPATH = "token.secret"
 
 #Sadly, I cannot use the __init__() of the class
 class serverClient(discord.Client):
+    #--------------------------------------------
+    #| Functions mostly used for initialization |
+    #--------------------------------------------
     def onReadyInit(self,argv=[]):
         self.javaPath = "usr/bin/java"
         self.serverPath = "./server/paper.jar"
@@ -35,6 +38,8 @@ class serverClient(discord.Client):
         self.__logger.writeToLog("Ready!")
 
     def interpretArgs(self,argv):
+        #Check whether the flags have been set correctly
+        #Might change functionality to support flags that need no value set
         for i in range(0,len(argv),2):
             arg = argv[i]
             if arg[:2] == "--":
@@ -51,10 +56,12 @@ class serverClient(discord.Client):
                 print("No flag supplied for value: " + arg + ".\nExiting...")
                 sys.exit()
 
+        #Actually set the values
         for i in range(0,len(argv),2):
             arg = argv[i][2:]
             value = argv[i+1]
             
+            #There also has to be a better way here
             if arg == "javaPath":
                 self.javaPath == value
             elif arg == "serverPath":
@@ -73,8 +80,9 @@ class serverClient(discord.Client):
     def getCurrentChannel(self):
         pass
 
-
-    #actual message handling and so on
+    #-----------------------------------------------
+    #| These functions do all the actual bot stuff |
+    #-----------------------------------------------
     async def on_ready(self):
         print("Warming up the utilities!")
         self.__ready = False
@@ -83,13 +91,14 @@ class serverClient(discord.Client):
     async def on_message(self, message):
         pass
 
+#Get bot token
 def getToken(path):
     file = open(path,"r")
     token = file.readline()
     file.close()
     return token
 
-
+#start the bot
 if __name__== "__main__":
     client = serverClient()
     client.run(getToken(TOKENPATH))
