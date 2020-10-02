@@ -1,20 +1,23 @@
 from datetime import datetime
 
 class Logger:
-    def __init__(self,path):
+    def __init__(self,path,printToConsole):
+        self.__printToConsole = printToConsole
         self.__path = path
         self.__file = None
+        self.writeToLog("Starting the Logger!")
 
-    def openLog(self):
+    def writeToLog(self,message):
         self.__file = open(self.__path,"a")
-        self.writetolog("Starting the Logger!")
 
-    def writetolog(self,message):
         time = datetime.now()
         timestring = time.strftime("%d/%m/%Y %H:%M:%S") + " - " + message + "\n"
-        self.__file.write()
+        self.__file.write(timestring)
+        if self.__printToConsole:
+            print(message)
 
-    def closeLog(self):
-        self.__file.write("\n\n")
         self.__file.close()
+
+    def endLog(self):
+        self.writeToLog("Closing the log!\n\n")
 

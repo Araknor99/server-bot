@@ -1,3 +1,4 @@
 server/
 token.secret
 log.txt
+__pycache__/
