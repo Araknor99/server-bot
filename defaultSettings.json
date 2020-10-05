@@ -1,0 +1,12 @@
+{
+    "serverSettings":
+    {
+        "javaPath":"/usr/bin/java",
+        "serverPath":"./server/paper.jar",
+        "minRAM":2,
+        "maxRAM":4
+    },
+    "logPath":"log.txt",
+    "standardChannel":"",
+    "checkSign":"$"
+}

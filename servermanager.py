@@ -3,17 +3,17 @@ from enum import Enum
 import os
 
 class ServerManager:
-    def __init__(self, jarPath, javapath, minRAM, maxRAM):
-        self.__java = javapath
-        self.__jarPath = jarPath 
-        self.__dirPath = os.path.dirname(jarPath)
+    def __init__(self, serverSettings):
+        java = serverSettings["javaPath"]
+        jarPath = serverSettings["serverPath"]
+        dirPath = os.path.dirname(jarPath)
         self.__subprocess = None
         self.__serverstate = ServerState.DOWN
         
-        minRAM = "-Xms" + str(minRAM) + "G"
-        maxRAM = "-Xmx" + str(maxRAM) + "G"
+        minRAM = "-Xms" + str(serverSettings["minRAM"]) + "G"
+        maxRAM = "-Xmx" + str(serverSettings["maxRAM"]) + "G"
 
-        self.__serverargs = [javapath, minRAM, maxRAM, "-jar", jarPath]
+        self.__serverargs = [java, minRAM, maxRAM, "-jar", jarPath]
 
     def getState(self):
         return self.__serverstate
