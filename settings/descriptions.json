@@ -1,0 +1,12 @@
+{
+    "serverSettings":
+    {
+        "javaPath":"Using java path '{}'!",
+        "serverPath":"Using server jar located at '{}'!",
+        "minRAM":"Using at least {} Gigabytes of RAM!",
+        "maxRAM":"Using at most {} Gigabytest of RAM!"
+    },
+    "logPath":"Using path '{}' for logging events!",
+    "standardChannel":"Monitoring messages in channel '{}'!",
+    "checkSign":"Responding to sign '{}'!"
+}

@@ -2,7 +2,7 @@
     "serverSettings":
     {
         "javaPath":"/usr/bin/java",
-        "serverPath":"./server/paper.jar",
+        "serverPath":"../server/paper.jar",
         "minRAM":2,
         "maxRAM":4
     },

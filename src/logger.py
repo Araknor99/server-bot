@@ -23,4 +23,3 @@ class Logger:
     #Just to add a divide between the end of the current log and the beggining of the next log
     def endLog(self):
         self.writeToLog("Closing the log!\n\n")
-
