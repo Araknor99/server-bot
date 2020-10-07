@@ -12,6 +12,8 @@ class SettingsManager:
     def loadSettings(self,fileHandler: FileHandler):
         descriptionPath = "../settings/descriptions.json"
         path = "../settings/settings.json"
+
+        self.__onDefaultSettings = False
         if not Path(path).is_file():
             path = "../settings/defaultSettings.json"
             self.__onDefaultSettings = True
@@ -19,6 +21,9 @@ class SettingsManager:
         self.__descriptions = fileHandler.loadJSON(descriptionPath)
         self.__settings = fileHandler.loadJSON(path)
         self.__serverSettings = self.__settings["serverSettings"]
+
+    def saveSettings(self,fileHandler: FileHandler):
+        fileHandler.dumpJSON("../settings/settins.json",self.__settings)
 
     def interpretArgs(self,argv):
         #Check whether the flags have been set correctly
@@ -66,9 +71,13 @@ class SettingsManager:
         return self.__setOption(option,value,self.__settings)
 
     #TODO: finish function
+    #      Add that the bot quits when there is no channel to listen to
     def validateSettings(self):
         if self.__serverSettings["maxRAM"] < self.__serverSettings["minRAM"]:
             print("Argument minRAM is bigger than maxRAM! Exiting...")
+            return False
+        if self.__settings["standardChannel"] == "":
+            print("No channel for listening has been set! Exiting...")
             return False
         return True
 
