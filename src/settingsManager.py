@@ -5,7 +5,6 @@ from logger import Logger
 class SettingsManager:
     def __init__(self):
         self.__settings = None
-        self.__serverSettings = None
         self.__descriptions = None
         self.__onDefaultSettings = False
 
@@ -18,9 +17,8 @@ class SettingsManager:
             path = "../settings/defaultSettings.json"
             self.__onDefaultSettings = True
 
-        self.__descriptions = fileHandler.loadJSON(descriptionPath)
         self.__settings = fileHandler.loadJSON(path)
-        self.__serverSettings = self.__settings["serverSettings"]
+        self.__descriptions = fileHandler.loadJSON(descriptionPath)
 
     def saveSettings(self,fileHandler: FileHandler):
         fileHandler.dumpJSON("../settings/settins.json",self.__settings)
@@ -56,6 +54,7 @@ class SettingsManager:
                 return False
         return True
 
+    #Gonna keep the compatibility for nested dicts in
     def __setOption(self,option,value,dictionairy):
         for key,setting in dictionairy.items():
             if isinstance(setting,dict):
@@ -70,8 +69,6 @@ class SettingsManager:
     def setOption(self,option,value):
         return self.__setOption(option,value,self.__settings)
 
-    #TODO: finish function
-    #      Add that the bot quits when there is no channel to listen to
     def validateSettings(self):
         if self.__serverSettings["maxRAM"] < self.__serverSettings["minRAM"]:
             print("Argument minRAM is bigger than maxRAM! Exiting...")
@@ -81,12 +78,12 @@ class SettingsManager:
             return False
         return True
 
-    def __logSettings(self,logger: Logger,settings,descriptions):
+    def __logSettings(self,logger: Logger,settings):
         for key, setting in settings.items():
             if isinstance(setting,dict):
-                self.__logSettings(logger,setting,descriptions[key])
+                self.__logSettings(logger,setting)
             else:
-                logger.writeToLog(descriptions[key].format(setting))
+                logger.writeToLog(self.__descriptions[key].format(setting))
 
     def logSettings(self,logger: Logger):
         if self.__onDefaultSettings:
@@ -96,8 +93,14 @@ class SettingsManager:
     def getSettings(self):
         return self.__settings
 
+    def getCmdRanks(self):
+        getBotSettings.__settings["cmdRankSettings"]
+
+    def getBotSettings(self):
+        return self.__settings["botSettings"]
+
     def getServerSettings(self):
-        return self.__serverSettings
+        return self.__settings["serverSettings"]
 
     def onDefaultSettings(self):
         return self.__onDefaultSettings

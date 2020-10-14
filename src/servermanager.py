@@ -1,5 +1,6 @@
 from subprocess import Popen, PIPE
 from enum import Enum
+from pathlib import Path
 import os
 
 class ServerManager:
@@ -7,6 +8,7 @@ class ServerManager:
         self.__subprocess = None
         self.__state = ServerState.DOWN
         self.__serverargs = None
+        self.__dirPath = None
         self.onServerStarted = None
         self.onServerClosed = None
 
@@ -20,6 +22,7 @@ class ServerManager:
         self.__settings = settings
         minRAM = "-Xms" + str(settings["minRAM"]) + "G"
         maxRAM = "-Xmx" + str(settings["maxRAM"]) + "G"
+        self.__dirPath = Path(settings["serverPath"]).parent
         
         args = [settings["javaPath"],minRAM,maxRAM,"-jar",settings["serverPath"]]
         self.__server.setArgs(args)
@@ -50,9 +53,8 @@ class ServerManager:
         reader = self.__subprocess.stdout
 
         self.__subprocess.communicate(input="stop\n")
-        nextline = ""
-        while nextline.find("Closing Server") == -1:
-            nextline = reader.readline().decode("utf-8")
+        while not reader.closed:
+            pass
 
         self.__state = ServerState.DOWN
         return True

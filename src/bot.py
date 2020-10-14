@@ -1,13 +1,15 @@
 #!/usr/bin/python3
 import discord
 import asyncio
+import os
+import sys
+
 from logger import Logger
 from servermanager import ServerManager, ServerState
 from filehandling import FileHandler
 from settingsmanager import SettingsManager
 from servermanager import ServerManager
-import os
-import sys
+from messageinterpreter import *
 
 TOKENPATH = "../token.secret"
 
@@ -31,15 +33,14 @@ class serverClient(discord.Client):
             return
 
         serverSettings = self.__sManager.getServerSettings()
-        settings = self.__sManager.getSettings()
+        settings = self.__sManager.getBotSettings()
 
         self.__logger = Logger(settings["logPath"],True)
-        
         self.__server.setArgs(serverSettings)
+
         self.__sManager.logSettings(self.__logger)
-        
-        self.__ready = True
         self.__logger.writeToLog("Ready!")
+        self.__ready = True
 
     def getToken(self):
         file = open(TOKENPATH)
@@ -52,8 +53,6 @@ class serverClient(discord.Client):
         self.__sManager.loadSettings(self.__fileHandler)
         self.__logger.wirteToLog("New settings loaded! Settings will take effect on server restart.")
 
-    #TODO: finish the function.
-    #      Needs to be able to start the server and log the settings
     async def startServer(self):
         self.__logger.writeToLog("Trying to start server...\nCurrent settings are:")
         self.__sManager.logSettings(self.__logger)
@@ -75,24 +74,46 @@ class serverClient(discord.Client):
             return False
 
         self.__logger.writeToLog("Server closed!")
+        self.__logger.writeToLog("Dumping current settings to settings.json")
         return False
 
 
-    #-------------------------------------------------------------
-    #| These functions do all the user interaction and bot stuff |
-    #-------------------------------------------------------------
-    #TODO finish this function
-    def checkMessage(self, message: discord.Message):
-        pass
-
+    #-----------------------------------------------------
+    #| These functions do all the user interaction stuff |
+    #-----------------------------------------------------
     async def on_ready(self):
         print("Warming up the utilities...")
         self.__ready = False
         await self.onReadyInit(sys.argv[1:])
 
     #TODO finish this function
-    async def on_message(self, message):
-        pass
+    async def on_message(self, message: discord.Message):
+        botSettings = self.__sManager.getBotSettings()
+        cmdRankSettings = self.__sManager.getCmdRanks()
+        serverSettings = self.__sMananger.getServerSettings()
+
+        author: discord.Member = message.author
+        authorName = author.name + author.discriminator
+        
+        if not validContext(message,botSettings):
+            return
+
+        self.__logger.wirteToLog("Recieved message from user '{}'!".format(authorName))
+        self.__logger.writeToLog("Message content:\n    {}".format(message.content))
+
+        cmdParts = asList(message.content,botSettings)
+        if not validCommand(cmdParts[0],cmdRankSettings):
+            self.__logger.writeToLog("Given command '{}' is not a valid command!".format(cmdParts[0]))
+            #Reply to the user
+            return
+
+        if not userHasPermission(author,author,cmdParts[0],cmdRankSettings):
+            self.__logger.writeToLog("User is not permitted to request the given command!")
+            #Reply to user
+            return
+        
+        
+        
 
 #start the bot
 if __name__== "__main__":
