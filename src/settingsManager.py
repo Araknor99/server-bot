@@ -27,7 +27,10 @@ class SettingsManager:
         #Check whether the flags have been set correctly
         #Might change functionality to support flags that need no value set
         #If the function cannot interpret the arguments then it returns False
-        for i in range(0,len(argv),2):
+        if len(argv) == 1:
+            return True
+            
+        for i in range(1,len(argv),2):
             arg = argv[i]
             if arg[:2] == "--":
                 try:
@@ -70,12 +73,14 @@ class SettingsManager:
         return self.__setOption(option,value,self.__settings)
 
     def validateSettings(self):
-        if self.__serverSettings["maxRAM"] < self.__serverSettings["minRAM"]:
+        if self.getServerSettings()["maxRAM"] < self.getServerSettings()["minRAM"]:
             print("Argument minRAM is bigger than maxRAM! Exiting...")
             return False
-        if self.__settings["standardChannel"] == "":
+        if self.getBotSettings()["standardChannel"] == "":
             print("No channel for listening has been set! Exiting...")
             return False
+        if self.getBotSettings()["checkRole"] == "":
+            print("No role set for restricted access commands! Exiting...")
         return True
 
     def __logSettings(self,logger: Logger,settings):
@@ -94,7 +99,7 @@ class SettingsManager:
         return self.__settings
 
     def getCmdRanks(self):
-        getBotSettings.__settings["cmdRankSettings"]
+        return self.__settings["cmdRankSettings"]
 
     def getBotSettings(self):
         return self.__settings["botSettings"]

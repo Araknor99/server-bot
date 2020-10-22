@@ -12,9 +12,6 @@ class ServerManager:
         self.onServerStarted = None
         self.onServerClosed = None
 
-    def getState(self):
-        return self.__state
-
     def setArgs(self,settings):
         if self.__server.isOperating():
             return False
@@ -58,6 +55,28 @@ class ServerManager:
 
         self.__state = ServerState.DOWN
         return True
+
+    def getState(self):
+        return self.__state
+
+    def getPlayerCount(self):
+        if self.isDown() or self.isProcessing():
+            raise RuntimeError("Unable to get players if server is not running!")
+
+        reader = self.__subprocess.stdout
+        self.__subprocess.communicate("list\n")
+        text: str = reader.readline().decode("utf-8")
+
+        parts = text.split(" ")
+        playerCount = 0
+
+        for part in parts:
+            try:
+                playerCount = int(part)
+                return playerCount
+            except ValueError:
+                continue
+            
 
     #force the exit of the server
     def forcekill(self):

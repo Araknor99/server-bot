@@ -1,0 +1,13 @@
+{
+    "ping":"Returns the current latency of the bot.",
+    "ip":"Returns the public IP of the host. Use it to connect to the server.",
+    "state":"Returns the current state of the server, i.e. whether it is online or not.",
+    "help":"Gives you a list of all commands and their usage/effects.",
+    "startserver":"Will start the server if not already running.",
+    "closeserver":"Will close the server if it is currently running.",
+    "restartdevice":"Usage: {}restartdevice <time> | Will close the server and restart the device after given time.",
+    "shutdowndevice":"Usage: {}shutdowndevice <time> | Will close the server and shutdown the device after given time",
+    "listargs":"Will list all Settings regarding the bot and server.",
+    "setarg":"Usage: {}setarg <option> <value> | Will set the given option to the given value.",
+    "quitbot":"Will quit the bot and shutdown the server if online. Only use this if you know what you're doing!"
+}

@@ -2,3 +2,4 @@ server/
 token.secret
 log.txt
 __pycache__/
+.vscode
