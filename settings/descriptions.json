@@ -7,6 +7,6 @@
     "standardChannel":"Monitoring messages in channel '{}'!",
     "checkSign":"Responding to sign '{}'!",
     "checkRole":"Executing restricted access commands for role '{}'!",
-    "lowerRank":"Giving open access to following commands:\n{}",
-    "higherRank":"Restricting access for following commands:\n{}"
+    "lowerRank":"Giving open access to following commands:\n    {}",
+    "higherRank":"Restricting access for following commands:\n   {}"
 }

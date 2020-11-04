@@ -16,7 +16,6 @@ class ServerManager:
         if self.__server.isOperating():
             return False
 
-        self.__settings = settings
         minRAM = "-Xms" + str(settings["minRAM"]) + "G"
         maxRAM = "-Xmx" + str(settings["maxRAM"]) + "G"
         self.__dirPath = Path(settings["serverPath"]).parent
@@ -76,7 +75,13 @@ class ServerManager:
                 return playerCount
             except ValueError:
                 continue
-            
+
+    #print message to people on server
+    def printMessage(self,message):
+        if self.isDown() or self.isProcessing():
+            raise RuntimeError("Unable print message if server is not running!")
+
+        
 
     #force the exit of the server
     def forcekill(self):

@@ -9,5 +9,5 @@
     "shutdowndevice":"Usage: {}shutdowndevice <time> | Will close the server and shutdown the device after given time",
     "listargs":"Will list all Settings regarding the bot and server.",
     "setarg":"Usage: {}setarg <option> <value> | Will set the given option to the given value.",
-    "quitbot":"Will quit the bot and shutdown the server if online. Only use this if you know what you're doing!"
+    "canceloperation":"Will cancel the device operation you have currently planned."
 }

@@ -6,10 +6,12 @@ class SettingsManager:
     def __init__(self):
         self.__settings = None
         self.__descriptions = None
+        self.__helpMessages = None
         self.__onDefaultSettings = False
 
     def loadSettings(self,fileHandler: FileHandler):
         descriptionPath = "../settings/descriptions.json"
+        helpMessagesPath = "../settings/helpMessages.json"
         path = "../settings/settings.json"
 
         self.__onDefaultSettings = False
@@ -19,6 +21,7 @@ class SettingsManager:
 
         self.__settings = fileHandler.loadJSON(path)
         self.__descriptions = fileHandler.loadJSON(descriptionPath)
+        self.__helpMesssages = fileHandler.loadJson(helpMessagesPath)
 
     def saveSettings(self,fileHandler: FileHandler):
         fileHandler.dumpJSON("../settings/settins.json",self.__settings)
@@ -95,6 +98,30 @@ class SettingsManager:
             logger.writeToLog("No custom settings set! Running on default settings!")
         self.__logSettings(logger,self.__settings,self.__descriptions)
 
+    #Check whether all the commands in the cmdRanks are in the helpMessages.json
+    #Will have to find a way to check whether all commands in commands.py are implemented in these files
+    def checkCommandIntegrity(self):
+        cmdRanks: dict = self.getCmdRanks()
+        helpMessages: dict = self.getHelpMessages()
+        integrity = True
+
+        for subdict in cmdRanks.values():
+            for command in subdict:
+                if command not in helpMessages.keys():
+                    print("Command {} from cmdRanks not present in helpMessages.json!".format(command))
+                    integrity = False
+
+        for command in helpMessages.keys():
+            for subdict in cmdRanks.values():
+                if command not in subdict:
+                    print("Command {} from helpMessages.json not present in cmdRanks!".format(command))
+                    integrity = False
+
+        return integrity
+
+    def getDescriptions(self):
+        return self.__descriptions
+
     def getSettings(self):
         return self.__settings
 
@@ -106,6 +133,9 @@ class SettingsManager:
 
     def getServerSettings(self):
         return self.__settings["serverSettings"]
+
+    def getHelpMessages(self):
+        return self.__helpMessages
 
     def onDefaultSettings(self):
         return self.__onDefaultSettings

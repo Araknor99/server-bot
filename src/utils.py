@@ -1,5 +1,5 @@
 from filehandling import FileHandler
-from servermanager import ServerManager,ServerState
+from servermanager import ServerManager
 from settingsmanager import SettingsManager
 from logger import Logger
 
@@ -10,6 +10,9 @@ class Utils:
         self.server: ServerManager = ServerManager()
         self.logger: Logger = None
 
+        self.deviceOpScheduled = False
+        self.botClosing = False
+
     def initSettings(self,argv):
         self.sManager.loadSettings(self.fileHandler)
 
@@ -17,6 +20,9 @@ class Utils:
             return False
 
         if not self.sManager.validateSettings():
+            return False
+
+        if not self.sManager.checkCommandIntegrity():
             return False
 
         serverSettings = self.sManager.getServerSettings()
@@ -32,7 +38,7 @@ class Utils:
     def reloadSettings(self):
         self.logger.writeToLog("Loading new Settings...")
         self.sManager.loadSettings(self.fileHandler)
-        self.logger.wirteToLog("New settings loaded! Settings will take effect on server restart.")
+        self.logger.writeToLog("New settings loaded! Settings will take effect on server restart.")
 
     async def startServer(self):
         self.logger.writeToLog("Trying to start server...\nCurrent settings are:")
@@ -57,3 +63,20 @@ class Utils:
         self.logger.writeToLog("Server closed!")
         self.logger.writeToLog("Dumping current settings to settings.json")
         return False
+
+    #Close all utils and the server application
+    async def closeBot(self):
+        self.botClosing = True
+
+        self.logger.writeToLog("Quitting bot!")
+        if self.server.isRunning:
+            self.closeServer()
+
+        self.sManager.logSettings(self.logger)
+        self.sManager.saveSettings()
+        self.logger.endLog(self)
+        
+    #relay message to server
+    async def relayMessage(self,message):
+        self.logger.writeToLog("Relaying message to server! Content is:{}".format(message))
+        self.server.printMessage(message)

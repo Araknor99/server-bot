@@ -12,6 +12,7 @@ class LifeCycle:
         self.utils: Utils = Utils()
         self.interpreter: MessageInterpreter = None
 
+    #Function to be called when a message arrives
     async def onMessageCallback(self,message):
         botSettings = self.sManager.getBotSettings()
 
@@ -19,11 +20,15 @@ class LifeCycle:
         author: discord.Member = message.author
         authorName = author.name + author.discriminator
         
+        if self.utils.botClosing:
+            await channel.send("I am currently restarting or being shut down. Please wait a bit.")
+            return
+
         if not self.interpreter.validContext(message):
             return
 
         self.utils.logger.writeToLog("Recieved message from user '{}'!".format(authorName))
-        self.utils.logger.writeToLog("Message content:\n    {}".format(message.content))
+        self.utils.logger.writeToLog("Message content:\n{}".format(message.content))
 
         if not self.interpreter.findCommand(message):
             self.utils.logger.writeToLog("Given command is not valid!")
@@ -39,11 +44,14 @@ class LifeCycle:
 
     async def initializeUtils(self):
         if not self.utils.initSettings(sys.argv):
+            print("Something went wrong while initialising the settings!")
             await self.dClient.close()
+            sys.exit()
             
         self.interpreter = MessageInterpreter(self.utils)
         self.dClient.onMessageCallback = self.onMessageCallback
 
+    #initiliaze discord interface
     def initializeDiscord(self):
         self.dClient.onReadyCallback = self.initializeUtils
         self.dClient.run(self.dClient.getToken())

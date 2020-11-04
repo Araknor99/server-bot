@@ -1,15 +1,5 @@
 #!/usr/bin/python3
 import discord
-import asyncio
-import os
-import sys
-
-from logger import Logger
-from servermanager import ServerManager, ServerState
-from filehandling import FileHandler
-from settingsmanager import SettingsManager
-from servermanager import ServerManager
-from commands import MessageInterpreter
 
 TOKENPATH = "../token.secret"
 
