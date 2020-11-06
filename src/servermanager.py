@@ -12,7 +12,7 @@ class ServerManager:
         self.onServerStarted = None
         self.onServerClosed = None
 
-    def setArgs(self,settings):
+    def setArgs(self,settings) -> bool:
         if self.__server.isOperating():
             return False
 
@@ -25,7 +25,7 @@ class ServerManager:
         return True
 
     #start the paper server
-    def openServer(self):
+    def openServer(self) -> bool:
         if self.isRunning() or self.isProcessing():
             return False
 
@@ -41,7 +41,7 @@ class ServerManager:
         return True
 
     #close the paper server
-    def closeServer(self):
+    def closeServer(self) -> bool:
         if self.isDown() or self.isProcessing():
             return False
 
@@ -55,10 +55,10 @@ class ServerManager:
         self.__state = ServerState.DOWN
         return True
 
-    def getState(self):
+    def getState(self) -> Enum:
         return self.__state
 
-    def getPlayerCount(self):
+    def getPlayerCount(self) -> int:
         if self.isDown() or self.isProcessing():
             raise RuntimeError("Unable to get players if server is not running!")
 
@@ -81,6 +81,8 @@ class ServerManager:
         if self.isDown() or self.isProcessing():
             raise RuntimeError("Unable print message if server is not running!")
 
+        self.__subprocess.communicate("say {}\n",format(message))
+
         
 
     #force the exit of the server
@@ -90,17 +92,17 @@ class ServerManager:
 
 
     #Three functions which have the sole purpose of improving the code readibility
-    def isRunning(self):
+    def isRunning(self) -> bool:
         if self.state > 1:
             return True
         return False
 
-    def isProcessing(self):
+    def isProcessing(self) -> bool:
         if self.__state == ServerState.PROCESSING:
             return True
         return False
 
-    def isDown(self):
+    def isDown(self) -> bool:
         if self.state < 1:
             return True
         return False

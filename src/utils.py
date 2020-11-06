@@ -19,7 +19,7 @@ class Utils:
         if not self.sManager.interpretArgs(argv):
             return False
 
-        if not self.sManager.validateSettings():
+        if not self.sManager.validateSettings(self.logger):
             return False
 
         if not self.sManager.checkCommandIntegrity():

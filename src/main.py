@@ -4,13 +4,13 @@ import sys
 
 from bot import ServerClient
 from utils import Utils
-from commands import MessageInterpreter
+from commands import CommandsManager
 
 class LifeCycle:
     def __init__(self):
         self.dClient: ServerClient = ServerClient()
         self.utils: Utils = Utils()
-        self.interpreter: MessageInterpreter = None
+        self.interpreter: CommandsManager = None
 
     #Function to be called when a message arrives
     async def onMessageCallback(self,message):
@@ -48,7 +48,7 @@ class LifeCycle:
             await self.dClient.close()
             sys.exit()
             
-        self.interpreter = MessageInterpreter(self.utils)
+        self.interpreter = CommandsManager(self.utils)
         self.dClient.onMessageCallback = self.onMessageCallback
 
     #initiliaze discord interface

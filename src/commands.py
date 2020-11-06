@@ -10,10 +10,11 @@ import urllib.request
 import asyncio
 import time
 
-class MessageInterpreter():
+class CommandsManager():
     def __init__(self,utils: Utils):
-        self.commands = [State,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,SetArg,QuitBot]
+        self.commands = [State,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
         self.cCommand: Command = None
+        self.cDeviceOp: Command = None
         self.utils = utils
 
     def validContext(self,message: discord.Message):
@@ -40,7 +41,7 @@ class MessageInterpreter():
 
         #ref as short for reference
         for ref in self.commands:
-            command = ref(self.asParts(message))
+            command = ref(self.asParts(message), message.channel, self.utils, self.cDeviceOp)
             if command.name == name:
                 self.cCommand = command
                 return True
@@ -78,14 +79,16 @@ class MessageInterpreter():
 # The actual implementation of the commands #
 #############################################
 class Command(ABC):
-    def __init__(self,messageParts, channel, utils):
+    def __init__(self,messageParts, channel, utils, cDeviceOp):
         self.name = ""
         self.messageParts: dict = messageParts
         self.channel: discord.TextChannel = channel
         self.utils: Utils = utils
+        self.cDeviceOp: Command = cDeviceOp
+        self.cancelRequested = False
         super().__init__()
 
-    async def checkArgs(self):
+    async def checkArgs(self) -> bool:
         return True
 
     @abstractmethod
@@ -93,8 +96,8 @@ class Command(ABC):
         pass
 
 class State(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "state"
 
     async def execute(self):
@@ -112,16 +115,16 @@ class State(Command):
     
 
 class Ping(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "ping"
 
     async def execute(self):
         await self.channel.send("The current latency is {}ms!".format(int(self.utils.latency * 1000)))
 
 class Ip(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().init(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().init(messageParts, channel, utils, cDeviceOp)
         self.name = "ip"
 
     async def execute(self):
@@ -129,8 +132,8 @@ class Ip(Command):
         await self.channel.send("The current IP of the server is: " + externalIP)
 
 class Help(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "help"
         self.message = "Commands:\n\n"
 
@@ -158,22 +161,27 @@ class Help(Command):
 
 
 class StartServer(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "startserver"
 
     async def execute(self):
-        await self.channel.send("Dumping current settings into savefile...")
-        self.utils.sManager.saveSettings()
+        checkRole = self.utils.sManager.getBotSettings()["checkRole"]
         await self.channel.send("Trying to start server...")
+
+        if not self.utils.sManager.validateSettings():
+            await self.channel.send("Cannot start server! Settings are invalid!\n Please contact someone with the role '{}'!".format(checkRole))
+            return
+
+        self.utils.sManager.saveSettings()
 
         if not await self.utils.startServer():
             await self.channel.send("Cannot start server! Is it already running or starting upo?")
         await self.channel.send("Server started! Have fun")
 
 class CloseServer(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "closeserver"
 
     async def execute(self):
@@ -182,13 +190,15 @@ class CloseServer(Command):
             await self.channel.send("Unable to close server! Is it already offline or shutting down?")
         await self.channel.send("Server Closed!")
 
+#TODO: implement timeOfStart
 class RestartDevice(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "restartdevice"
         self.time = 0
+        self.timeOfStart = None
 
-    async def checkArgs(self):
+    async def checkArgs(self) -> bool:
         if len(self.messageParts) == 1:
             await self.channel.send("Please specify a time interval in minutes.")
             return False
@@ -204,18 +214,22 @@ class RestartDevice(Command):
         if self.utils.server.isRunning():
             self.utils.relayMessage("Restarting in {} minutes!".format(self.time))
         
-        time.sleep(self.time * 60);
-        self.utils.closeBot()
-        os.system("shutdown 0")
+        self.cDeviceOp = self
 
-            
+        time.sleep(self.time * 60);
+        if not self.cancelRequested:
+            self.utils.closeBot()
+            os.system("shutdown 0")
+
+#TODO: implement timeOfStart
 class ShutdownDevice(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts,channel,utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "shutdowndevice"
         self.time = 0
+        self.timeOfStart = None
 
-    async def checkArgs(self):
+    async def checkArgs(self) -> bool:
         if len(self.messageParts) == 1:
             await self.channel.send("Please specify a time interval in minutes.")
             return False
@@ -231,15 +245,18 @@ class ShutdownDevice(Command):
         if self.utils.server.isRunning():
             self.utils.relayMessage("Shutting down in {} minutes!".format(self.time))
 
+        self.cDeviceOp = self
+
         time.sleep(self.time * 60);
-        self.utils.closeBot()
-        os.system("reboot")
+        if not self.cancelRequested:
+            self.utils.closeBot()
+            os.system("reboot")
 
 class ListArgs(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils)
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
         self.name = "listargs"
-        self.message = "The options are the following:\n"
+        self.message = "The settings are the following:\n"
 
     def __expandMessage(self, options: dict, desc: dict):
         for key,value in options.items():
@@ -256,7 +273,62 @@ class ListArgs(Command):
         await self.channel.send(self.message)
 
 class SetArg(Command):
-    pass
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
+        self.name = "setarg"
+
+    async def checkArgs(self) -> bool:
+        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+
+        if len(self.messageParts) < 3:
+            await self.channel.send("Not enough arguments specified!\n Use {}help to get info on usage.".format(checkSign))
+            return False
+
+        return True
+
+    #TODO: finish this function 
+    async def execute(self):
+        setting = self.messageParts[1]
+        value = self.messageParts[2]
+        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+
+        if not self.utils.sManager.checkForSetting(setting):
+            await self.channel.send("The setting '{}{}' does not exist!\nUse {}listargs for a list of commands!".format(checkSign,setting,checkSign))
+            return
+        
+        dataype = self.utils.sManager.checkForSettingType(setting)
+        if isinstance(dataype,int):
+            try:
+                value = int(value)
+            except ValueError:
+                await self.channel.send("Your value for the given setting has to be a number!")
+                return
+            
+        self.utils.sManager.setOption(setting,value)
 
 class CancelOperation(Command):
-    pass
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
+        self.name = "listargs"
+
+    async def execute(self):
+        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+
+        if(self.cDeviceOp == None):
+            await self.channel.send("Currently no device operation planned!\n Use '{}listop'".format(checkSign))
+            return
+        
+        self.cDeviceOp.cancelRequested = True
+
+#TODO: finish this function!
+class ListDeviceOp(Command):
+    def __init__(self, messageParts, channel, utils, cDeviceOp):
+        super().__init__(messageParts, channel, utils, cDeviceOp)
+        self.name = "listdeviceop"
+
+    async def execute(self):
+        if self.cDeviceOp == None:
+            await self.channel.send("No device operation planned!")
+        elif self.cDeviceOp.name == "restartdevice":
+            time = self.cDeviceOp.time
+            await self.channel.send("Planning a restart of the device in {minutes} ")

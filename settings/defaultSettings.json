@@ -13,6 +13,6 @@
     },
     "cmdRankSettings":{
         "lowerRank":["ping","ip","state","help"],
-        "higherRank":["startserver","closeserver","restartdevice","shutdowndevice","listargs","setarg","canceloperation"]
+        "higherRank":["startserver","closeserver","restartdevice","shutdowndevice","listargs","setarg","canceloperation","listdeviceop"]
     }
 }
