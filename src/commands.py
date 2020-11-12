@@ -9,12 +9,12 @@ import discord
 import urllib.request
 import asyncio
 import time
+import datetime
 
 class CommandsManager():
     def __init__(self,utils: Utils):
         self.commands = [State,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
         self.cCommand: Command = None
-        self.cDeviceOp: Command = None
         self.utils = utils
 
     def validContext(self,message: discord.Message):
@@ -79,13 +79,11 @@ class CommandsManager():
 # The actual implementation of the commands #
 #############################################
 class Command(ABC):
-    def __init__(self,messageParts, channel, utils, cDeviceOp):
+    def __init__(self, messageParts, channel, utils):
         self.name = ""
         self.messageParts: dict = messageParts
         self.channel: discord.TextChannel = channel
         self.utils: Utils = utils
-        self.cDeviceOp: Command = cDeviceOp
-        self.cancelRequested = False
         super().__init__()
 
     async def checkArgs(self) -> bool:
@@ -96,8 +94,8 @@ class Command(ABC):
         pass
 
 class State(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "state"
 
     async def execute(self):
@@ -115,15 +113,15 @@ class State(Command):
     
 
 class Ping(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "ping"
 
     async def execute(self):
         await self.channel.send("The current latency is {}ms!".format(int(self.utils.latency * 1000)))
 
 class Ip(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
+    def __init__(self, messageParts, channel, utils):
         super().init(messageParts, channel, utils, cDeviceOp)
         self.name = "ip"
 
@@ -132,8 +130,8 @@ class Ip(Command):
         await self.channel.send("The current IP of the server is: " + externalIP)
 
 class Help(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "help"
         self.message = "Commands:\n\n"
 
@@ -161,8 +159,8 @@ class Help(Command):
 
 
 class StartServer(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "startserver"
 
     async def execute(self):
@@ -180,8 +178,8 @@ class StartServer(Command):
         await self.channel.send("Server started! Have fun")
 
 class CloseServer(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "closeserver"
 
     async def execute(self):
@@ -190,71 +188,9 @@ class CloseServer(Command):
             await self.channel.send("Unable to close server! Is it already offline or shutting down?")
         await self.channel.send("Server Closed!")
 
-#TODO: implement timeOfStart
-class RestartDevice(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
-        self.name = "restartdevice"
-        self.time = 0
-        self.timeOfStart = None
-
-    async def checkArgs(self) -> bool:
-        if len(self.messageParts) == 1:
-            await self.channel.send("Please specify a time interval in minutes.")
-            return False
-        
-        self.time = int(self.messageParts[1])
-        return True
-
-    async def execute(self):
-        if self.utils.deviceOpScheduled:
-            await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
-            return
-
-        if self.utils.server.isRunning():
-            self.utils.relayMessage("Restarting in {} minutes!".format(self.time))
-        
-        self.cDeviceOp = self
-
-        time.sleep(self.time * 60);
-        if not self.cancelRequested:
-            self.utils.closeBot()
-            os.system("shutdown 0")
-
-#TODO: implement timeOfStart
-class ShutdownDevice(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
-        self.name = "shutdowndevice"
-        self.time = 0
-        self.timeOfStart = None
-
-    async def checkArgs(self) -> bool:
-        if len(self.messageParts) == 1:
-            await self.channel.send("Please specify a time interval in minutes.")
-            return False
-
-        self.time = int(self.messageParts[1])
-        return True
-    
-    async def execute(self):
-        if self.utils.deviceOpScheduled:
-            await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
-            return
-        
-        if self.utils.server.isRunning():
-            self.utils.relayMessage("Shutting down in {} minutes!".format(self.time))
-
-        self.cDeviceOp = self
-
-        time.sleep(self.time * 60);
-        if not self.cancelRequested:
-            self.utils.closeBot()
-            os.system("reboot")
-
 class ListArgs(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "listargs"
         self.message = "The settings are the following:\n"
 
@@ -273,8 +209,8 @@ class ListArgs(Command):
         await self.channel.send(self.message)
 
 class SetArg(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "setarg"
 
     async def checkArgs(self) -> bool:
@@ -306,29 +242,89 @@ class SetArg(Command):
             
         self.utils.sManager.setOption(setting,value)
 
+class RestartDevice(Command):
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
+        self.name = "restartdevice"
+
+    async def checkArgs(self) -> bool:
+        if len(self.messageParts) == 1:
+            await self.channel.send("Please specify a time interval in minutes.")
+            return False
+        
+        self.time = int(self.messageParts[1])
+        return True
+
+    async def execute(self):
+        if self.utils.scheduler.eventScheduled():
+            await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
+            return
+
+        if self.utils.server.isRunning():
+            self.utils.relayMessage("Restarting in {} minutes!".format(self.time))
+        
+        timepoint = datetime.datetime.now() + datetime.timedelta(minutes=self.time)
+        self.utils.scheduler.setEvent(timepoint,self.utils.restart)
+        
+
+class ShutdownDevice(Command):
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
+        self.name = "shutdowndevice"
+
+    async def checkArgs(self) -> bool:
+        if len(self.messageParts) == 1:
+            await self.channel.send("Please specify a time interval in minutes.")
+            return False
+
+        self.time = int(self.messageParts[1])
+        return True
+    
+    async def execute(self):
+        if self.utils.scheduler.eventScheduled():
+            await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
+            return
+        
+        if self.utils.server.isRunning():
+            self.utils.relayMessage("Shutting down in {} minutes!".format(self.time))
+
+        timepoint = datetime.datetime.now() + datetime.timedelta(minutes = self.time)
+        self.utils.scheduler.setEvent(timepoint,self.utils.restart)
+
 class CancelOperation(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "listargs"
 
     async def execute(self):
         checkSign = self.utils.sManager.getBotSettings["checkSign"]
 
-        if(self.cDeviceOp == None):
+        if(self.utils.scheduler.eventScheduled()):
             await self.channel.send("Currently no device operation planned!\n Use '{}listop'".format(checkSign))
             return
+
+        self.utils.scheduler.clearEvent()
+        await self.channel.send("Scheduled event has been canceled!")
         
-        self.cDeviceOp.cancelRequested = True
 
 #TODO: finish this function!
 class ListDeviceOp(Command):
-    def __init__(self, messageParts, channel, utils, cDeviceOp):
-        super().__init__(messageParts, channel, utils, cDeviceOp)
+    def __init__(self, messageParts, channel, utils):
+        super().__init__(messageParts, channel, utils,)
         self.name = "listdeviceop"
+        self.timeDiff: datetime.timedelta = None
 
     async def execute(self):
-        if self.cDeviceOp == None:
-            await self.channel.send("No device operation planned!")
-        elif self.cDeviceOp.name == "restartdevice":
-            time = self.cDeviceOp.time
-            await self.channel.send("Planning a restart of the device in {minutes} ")
+        if self.utils.scheduler.eventScheduled():
+            self.timeDiff = self.utils.scheduler.howLongTill()
+        else:
+            await self.channel.send("There is currently no operation scheduled!")
+            return
+
+        s = self.timeDiff.seconds
+        m = int(s/60)
+
+        if self.utils.scheduler.getEventType() == "restartdevice":
+            await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
+        elif self.utils.scheduler.getEventType() == "shutdowndevice":
+            await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))

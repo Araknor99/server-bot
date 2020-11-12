@@ -24,7 +24,8 @@ class SettingsManager:
         self.__descriptions = fileHandler.loadJSON(descriptionPath)
         self.__helpMesssages = fileHandler.loadJSON(helpMessagesPath)
 
-    def saveSettings(self,fileHandler: FileHandler):
+    def saveSettings(self, fileHandler: FileHandler, logger: Logger):
+        logger.writeToLog("Saving current settings to file!")
         fileHandler.dumpJSON("../settings/settins.json",self.__settings)
 
     def interpretArgs(self,argv):

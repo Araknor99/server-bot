@@ -1,16 +1,19 @@
 from filehandling import FileHandler
 from servermanager import ServerManager
 from settingsmanager import SettingsManager
+from deviceopscheduler import DeviceOpScheduler
 from logger import Logger
+
+import os
 
 class Utils:
     def __init__(self):
         self.fileHandler: FileHandler = FileHandler()
         self.sManager: SettingsManager = SettingsManager()
         self.server: ServerManager = ServerManager()
+        self.scheduler: DeviceOpScheduler = DeviceOpScheduler()
         self.logger: Logger = None
 
-        self.deviceOpScheduled = False
         self.botClosing = False
 
     def initSettings(self,argv):
@@ -73,8 +76,18 @@ class Utils:
             self.closeServer()
 
         self.sManager.logSettings(self.logger)
-        self.sManager.saveSettings()
+        self.sManager.saveSettings(self.logger)
         self.logger.endLog(self)
+
+    async def shutdown(self):
+        self.logger.writeToLog("Shutting down!")
+        await self.closeBot()
+        os.system("shutdown now")
+
+    async def restart(self):
+        self.logger.writeToLog("Restarting!")
+        await self.closeBot()
+        os.system("shutdown -r 0")
         
     #relay message to server
     async def relayMessage(self,message):
