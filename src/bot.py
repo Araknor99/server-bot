@@ -1,5 +1,5 @@
-#!/usr/bin/python3
 import discord
+import sys
 
 TOKENPATH = "../token.secret"
 
@@ -19,7 +19,11 @@ class ServerClient(discord.Client):
         await self.onMessageCallback(message)
 
     def getToken(self):
-        file = open(TOKENPATH)
-        text = file.read()
-        file.close()
-        return text
+        try:
+            file = open(TOKENPATH)
+            text = file.read()
+            file.close()
+            return text
+        except:
+            print("Unable to read the Token! Did you put it in the proper place?")
+            sys.exit()

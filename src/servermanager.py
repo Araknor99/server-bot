@@ -22,10 +22,9 @@ class ServerManager:
 
     #start the paper server
     def openServer(self) -> bool:
-        if self.isRunning() or self.isProcessing():
+        if self.isRunning():
             return False
 
-        self.__state = ServerState.PROCESSING
         self.__subprocess = Popen(self.__serverargs, stdout=PIPE, stdin=PIPE, stderr=PIPE, cwd=self.__dirPath)
         
         reader = self.__subprocess.stdout
@@ -38,10 +37,9 @@ class ServerManager:
 
     #close the paper server
     def closeServer(self) -> bool:
-        if self.isDown() or self.isProcessing():
+        if self.isDown():
             return False
 
-        self.__state = ServerState.PROCESSING
         reader = self.__subprocess.stdout
 
         self.__subprocess.communicate(bytes("stop\n","utf-8"))
@@ -55,7 +53,7 @@ class ServerManager:
         return self.__state
 
     def getPlayerCount(self) -> int:
-        if self.isDown() or self.isProcessing():
+        if self.isDown():
             raise RuntimeError("Unable to get players if server is not running!")
 
         self.__subprocess.stdin.write(bytes("list\n","utf-8"))
@@ -74,7 +72,7 @@ class ServerManager:
 
     #print message to people on server
     def printMessage(self,message):
-        if self.isDown() or self.isProcessing():
+        if self.isDown():
             raise RuntimeError("Unable print message if server is not running!")
 
         self.__subprocess.stdin.write(bytes("say {}\n".format(message),"utf-8"))
@@ -88,25 +86,14 @@ class ServerManager:
 
     #Three functions which have the sole purpose of improving the code readibility
     def isRunning(self) -> bool:
-        if self.__state > 1:
-            return True
-        return False
-
-    def isProcessing(self) -> bool:
-        if self.__state == ServerState.PROCESSING:
-            return True
-        return False
+        return bool(int(self.__state))
 
     def isDown(self) -> bool:
-        if self.__state < 1:
-            return True
-        return False
+        return not bool(int(self.__state))
 
 
 #State used to convey what the server is doing right now
 #Will be used to stop users from starting the server multiple times in a row, etc
 class ServerState(IntEnum):
-    RUNNING = 2
-    PROCESSING = 1
+    RUNNING = 1
     DOWN = 0
-    KILLED = -1

@@ -19,7 +19,13 @@ class SettingsManager:
             path = "../settings/defaultSettings.json"
             self.__onDefaultSettings = True
 
-        self.__settings = fileHandler.loadJSON(path)
+        # Set to defaultSettings if settings.json contains an error
+        try:
+            self.__settings = fileHandler.loadJSON(path)
+        except:
+            path = "../settings/defaultSettings.json"
+            self.__settings = fileHandler.loadJSON(path)
+        
         self.__descriptions = fileHandler.loadJSON(descriptionPath)
         self.__helpMessages = fileHandler.loadJSON(helpMessagesPath)
 
@@ -142,17 +148,17 @@ class SettingsManager:
             errorMessages.append("No role set for restricted access commands!")
         return errorMessages
 
-    def __logSettings(self, logger: Logger, settings):
+    def __logSettings(self, settings):
+        msg: str = ""
         for key, setting in settings.items():
             if isinstance(setting,dict):
-                self.__logSettings(logger,setting)
+                msg += self.__logSettings(setting)
             else:
-                logger.writeToLog(" >" + self.__descriptions[key].format(setting))
+                msg += "    >" + self.__descriptions[key].format(setting) + "\n"
+        return msg
 
-    def logSettings(self, logger: Logger):
-        if self.__onDefaultSettings:
-            logger.writeToLog("No custom settings set! Running on default settings!")
-        self.__logSettings(logger,self.__settings)
+    def logSettings(self):
+        return self.__logSettings(self.__settings)
 
     #Check whether all implemented commands have a rank and helpMessage.
     #Only checking this way around not vice versa, 

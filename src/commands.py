@@ -80,7 +80,8 @@ class CommandsManager():
         if not await self.cCommand.checkArgs():
             return
 
-        await self.cCommand.execute()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.cCommand.execute())
 
 
 
@@ -116,8 +117,6 @@ class State(Command):
             await self.channel.send("Server process has been killed! Did something happen?")
         elif state == ServerState.DOWN:
             await self.channel.send("The server is currently offline.")
-        elif state == ServerState.PROCESSING:
-            await self.channel.send("The server is currently processing an operation.")
         elif state == ServerState.RUNNING:
             playerCount = self.utils.server.getPlayerCount()
             await self.channel.send("The server is online!\nThere are currently {} players on it!".format(playerCount))
@@ -150,6 +149,9 @@ class Help(Command):
         longest = len(max(messages.keys(),key=len))
         for cmd in cmdRanks:
             msg = messages[cmd]
+            if "{}" in msg:
+                msg = msg.format(checkSign)
+
             spaces = longest - len(cmd)
             part = "{}{}{} - {}\n".format(checkSign,cmd,spaces * " ",msg)
             self.message += part
@@ -175,17 +177,10 @@ class StartServer(Command):
         self.name = "startserver"
 
     async def execute(self):
-        checkRole = self.utils.sManager.getBotSettings()["checkRole"]
-        await self.channel.send("Trying to start server...")
-
-        if not self.utils.validateSettings():
-            await self.channel.send("Cannot start server! Settings are invalid!\n Please contact someone with the role '{}'!".format(checkRole))
-            return
-
-        self.utils.saveSettings()
+        await self.channel.send("Trying to start server. This might take a while...")
 
         if not await self.utils.startServer():
-            await self.channel.send("Cannot start server! Is it already running or starting up?")
+            await self.channel.send("Cannot start server! Please check state and settings!")
             return
         await self.channel.send("Server started! Have fun!")
 
@@ -195,7 +190,7 @@ class CloseServer(Command):
         self.name = "closeserver"
 
     async def execute(self):
-        await self.channel.send("Trying to close server...")
+        await self.channel.send("Trying to close server. This might take a while...")
         if not await self.utils.closeServer():
             await self.channel.send("Unable to close server! Is it already offline or shutting down?")
             return
@@ -307,13 +302,13 @@ class ShutdownDevice(Command):
 class CancelOperation(Command):
     def __init__(self, messageParts, channel, utils, bot):
         super().__init__(messageParts, channel, utils, bot)
-        self.name = "listargs"
+        self.name = "canceloperation"
 
     async def execute(self):
-        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+        checkSign = self.utils.sManager.getBotSettings()["checkSign"]
 
-        if(self.utils.scheduler.eventScheduled()):
-            await self.channel.send("Currently no device operation planned!\n Use '{}listop'".format(checkSign))
+        if(not self.utils.scheduler.eventScheduled()):
+            await self.channel.send("Currently no device operation planned!\n Use '{}listdeviceop'".format(checkSign))
             return
 
         self.utils.scheduler.clearEvent()

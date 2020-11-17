@@ -38,7 +38,7 @@ class Utils:
         self.logger = Logger(settings["logPath"],True)
         self.server.setArgs(serverSettings)
 
-        self.sManager.logSettings(self.logger)
+        self.logSettings()
         return True
 
     def reloadSettings(self):
@@ -81,18 +81,26 @@ class Utils:
         return True
 
     def saveSettings(self):
-        self.writeToLog("Saving settings to file!!\nCurrent settigns are:")
-        self.sManager.logSettings(self.logger)
+        self.writeToLog("Saving settings to file!\nCurrent settings are:")
+        self.logSettings()
         self.sManager.saveSettings(self.fileHandler)
+
+    def logSettings(self):
+        if self.sManager.onDefaultSettings():
+            self.writeToLog("Currently working on default settings!")
+        msg = "Current settings: \n" + self.sManager.logSettings()
+        self.writeToLog(msg)
         
     async def startServer(self):
-        self.writeToLog("Trying to start server...\nCurrent settings are:")
-        self.sManager.logSettings(self.logger)
+        self.writeToLog("Trying to start server...")
+
+        self.validateSettings()
+        self.saveSettings()
 
         serverSettings = self.sManager.getServerSettings()
         self.server.setArgs(serverSettings)
         if not self.server.openServer():
-            self.writeToLog("Unable to start server! Server is already running or processing operation!")
+            self.writeToLog("Unable to start server! Server is already running!")
             return False
 
         self.writeToLog("Server started!")
@@ -102,7 +110,7 @@ class Utils:
         self.writeToLog("Trying to close Server...")
 
         if not self.server.closeServer():
-            self.writeToLog("Unable to close Server! Server is already down or processing operation!")
+            self.writeToLog("Unable to close Server! Server is already down!")
             return False
 
         self.writeToLog("Server closed!")
@@ -115,9 +123,10 @@ class Utils:
 
         self.writeToLog("Quitting bot!")
         if self.server.isRunning:
+            self.relayMessage("Server is shutting down!")
             self.closeServer()
 
-        self.sManager.logSettings(self.logger)
+        self.logSettings(self.logger)
         self.sManager.saveSettings(self.logger)
         self.logger.endLog(self)
 

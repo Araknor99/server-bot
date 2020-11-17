@@ -18,7 +18,7 @@ class FileHandler:
             os.remove(path)
         os.system("touch {}".format(path))
         file = open(path,"w")
-        file.write(json.dumps(content))
+        file.write(json.dumps(content,indent=2))
         file.close()
 
     def getToken(self,path):

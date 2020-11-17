@@ -1,5 +1,6 @@
 server/
 token.secret
+settings.json
 log.txt
 __pycache__/
 .vscode

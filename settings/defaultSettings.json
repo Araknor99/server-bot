@@ -12,7 +12,19 @@
         "checkRole":""
     },
     "cmdRankSettings":{
-        "lowerRank":["ping","ip","state","help"],
-        "higherRank":["startserver","closeserver","restartdevice","shutdowndevice","listargs","setarg","canceloperation","listdeviceop"]
+        "lowerRank":[
+            "ping",
+            "ip",
+            "state",
+            "help"],
+        "higherRank":[
+            "startserver",
+            "closeserver",
+            "restartdevice",
+            "shutdowndevice",
+            "listargs",
+            "setarg",
+            "canceloperation",
+            "listdeviceop"]
     }
 }
