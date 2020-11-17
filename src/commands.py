@@ -131,7 +131,7 @@ class Ping(Command):
 
 class Ip(Command):
     def __init__(self, messageParts, channel, utils, bot):
-        super().init(messageParts, channel, utils, cDeviceOp)
+        super().init(messageParts, channel, utils, bot)
         self.name = "ip"
 
     async def execute(self):
