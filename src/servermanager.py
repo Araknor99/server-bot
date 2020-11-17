@@ -13,9 +13,6 @@ class ServerManager:
         self.onServerClosed = None
 
     def setArgs(self,settings) -> bool:
-        if self.__server.isOperating():
-            return False
-
         minRAM = "-Xms" + str(settings["minRAM"]) + "G"
         maxRAM = "-Xmx" + str(settings["maxRAM"]) + "G"
         self.__dirPath = Path(settings["serverPath"]).parent
