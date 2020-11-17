@@ -1,4 +1,5 @@
 from abc import ABC,abstractmethod
+from inspect import indentsize
 from bot import ServerClient
 from utils import Utils
 from servermanager import ServerManager,ServerState
@@ -13,7 +14,7 @@ import datetime
 
 class CommandsManager():
     def __init__(self, utils: Utils, disClient: ServerClient):
-        self.commands = [State,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
+        self.commands = [State,Ping,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
         self.cCommand: Command = None
         self.utils = utils
         self.disClient = disClient
@@ -24,13 +25,14 @@ class CommandsManager():
         for whatCommand in self.commands:
             command: Command = whatCommand(None,None,None,None)
             commandList.append(command.name)
+        return commandList
 
     def validContext(self, message: discord.Message):
         botSettings = self.utils.sManager.getBotSettings()
         if message.channel.name != botSettings["standardChannel"]:
             return False
 
-        if message.content.find(botSettings["checkSign"] != 0):
+        if message.content.find(botSettings["checkSign"]) != 0:
             return False
 
         return True
@@ -39,8 +41,8 @@ class CommandsManager():
         botSettings = self.utils.sManager.getBotSettings()
         checkSign = botSettings["checkSign"]
 
-        parts = message.split(checkSign)
-        parts[0].replace(checkSign,"",1)
+        parts = message.split(" ")
+        parts[0] = parts[0].replace(checkSign,"",1)
 
         return parts
 
@@ -49,7 +51,7 @@ class CommandsManager():
 
         #ref as short for reference
         for ref in self.commands:
-            command = ref(self.asParts(message), message.channel, self.utils, self.disClient)
+            command = ref(self.asParts(message.content), message.channel, self.utils, self.disClient)
             if command.name == name:
                 self.cCommand = command
                 return True
@@ -127,11 +129,11 @@ class Ping(Command):
         self.name = "ping"
 
     async def execute(self):
-        await self.channel.send("The current latency is {}ms!".format(int(self.utils.latency * 1000)))
+        await self.channel.send("The current latency is {}ms!".format(int(self.bot.latency * 1000)))
 
 class Ip(Command):
     def __init__(self, messageParts, channel, utils, bot):
-        super().init(messageParts, channel, utils, bot)
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "ip"
 
     async def execute(self):
@@ -145,11 +147,11 @@ class Help(Command):
         self.message = "Commands:\n\n"
 
     def addCmdsToMessage(self,messages,cmdRanks,checkSign):
-        longest = len(max(messages.keys,key=len))
+        longest = len(max(messages.keys(),key=len))
         for cmd in cmdRanks:
             msg = messages[cmd]
             spaces = longest - len(cmd)
-            part = "{}{}{}{} - {}\n".format(checkSign,cmd,spaces * " ",msg)
+            part = "{}{}{} - {}\n".format(checkSign,cmd,spaces * " ",msg)
             self.message += part
 
     async def execute(self):
@@ -180,11 +182,12 @@ class StartServer(Command):
             await self.channel.send("Cannot start server! Settings are invalid!\n Please contact someone with the role '{}'!".format(checkRole))
             return
 
-        self.utils.sManager.saveSettings()
+        self.utils.saveSettings()
 
         if not await self.utils.startServer():
-            await self.channel.send("Cannot start server! Is it already running or starting upo?")
-        await self.channel.send("Server started! Have fun")
+            await self.channel.send("Cannot start server! Is it already running or starting up?")
+            return
+        await self.channel.send("Server started! Have fun!")
 
 class CloseServer(Command):
     def __init__(self, messageParts, channel, utils, bot):
@@ -195,6 +198,7 @@ class CloseServer(Command):
         await self.channel.send("Trying to close server...")
         if not await self.utils.closeServer():
             await self.channel.send("Unable to close server! Is it already offline or shutting down?")
+            return
         await self.channel.send("Server Closed!")
 
 class ListArgs(Command):
@@ -223,7 +227,7 @@ class SetArg(Command):
         self.name = "setarg"
 
     async def checkArgs(self) -> bool:
-        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+        checkSign = self.utils.sManager.getBotSettings()["checkSign"]
 
         if len(self.messageParts) < 3:
             await self.channel.send("Not enough arguments specified!\n Use {}help to get info on usage.".format(checkSign))
@@ -231,18 +235,17 @@ class SetArg(Command):
 
         return True
 
-    #TODO: finish this function 
     async def execute(self):
         setting = self.messageParts[1]
         value = self.messageParts[2]
-        checkSign = self.utils.sManager.getBotSettings["checkSign"]
+        checkSign = self.utils.sManager.getBotSettings()["checkSign"]
 
         if not self.utils.sManager.checkForSetting(setting):
             await self.channel.send("The setting '{}{}' does not exist!\nUse {}listargs for a list of commands!".format(checkSign,setting,checkSign))
             return
         
-        dataype = self.utils.sManager.checkForSettingType(setting)
-        if isinstance(dataype,int):
+        datatype = self.utils.sManager.checkForSettingType(setting)
+        if datatype == int:
             try:
                 value = int(value)
             except ValueError:
@@ -250,6 +253,7 @@ class SetArg(Command):
                 return
             
         self.utils.sManager.setOption(setting,value)
+        await self.channel.send("Parameter has been set!")
 
 class RestartDevice(Command):
     def __init__(self, messageParts, channel, utils, bot):

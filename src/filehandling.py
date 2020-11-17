@@ -16,7 +16,8 @@ class FileHandler:
     def dumpJSON(self,path,content):
         if Path(path).is_file():
             os.remove(path)
-        file = open(path)
+        os.system("touch {}".format(path))
+        file = open(path,"w")
         file.write(json.dumps(content))
         file.close()
 

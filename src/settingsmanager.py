@@ -8,7 +8,6 @@ class SettingsManager:
         self.__descriptions = None
         self.__helpMessages = None
         self.__onDefaultSettings = False
-        logger: Logger = None
 
     def loadSettings(self,fileHandler: FileHandler):
         descriptionPath = "../settings/descriptions.json"
@@ -22,11 +21,10 @@ class SettingsManager:
 
         self.__settings = fileHandler.loadJSON(path)
         self.__descriptions = fileHandler.loadJSON(descriptionPath)
-        self.__helpMesssages = fileHandler.loadJSON(helpMessagesPath)
+        self.__helpMessages = fileHandler.loadJSON(helpMessagesPath)
 
-    def saveSettings(self, fileHandler: FileHandler, logger: Logger):
-        logger.writeToLog("Saving current settings to file!")
-        fileHandler.dumpJSON("../settings/settins.json",self.__settings)
+    def saveSettings(self, fileHandler: FileHandler):
+        fileHandler.dumpJSON("../settings/settings.json",self.__settings)
 
     def interpretArgs(self,argv):
         #Check whether the flags have been set correctly
@@ -95,7 +93,7 @@ class SettingsManager:
             if key == settingName:
                 exists = True
                 break
-            if isinstance(value,dic):
+            if isinstance(value,dict):
                 exists = self.checkForSetting(settingName,dic[key])
 
         return exists
@@ -112,7 +110,7 @@ class SettingsManager:
             if key == settingName:
                 datatype = type(value)
                 break
-            if isinstance(value,dic):
+            if isinstance(value,dict):
                 datatype = self.__checkForSettingType(settingName,dic[key])
 
         return datatype
@@ -144,17 +142,17 @@ class SettingsManager:
             errorMessages.append("No role set for restricted access commands!")
         return errorMessages
 
-    def __logSettings(self, settings, logger: Logger):
+    def __logSettings(self, logger: Logger, settings):
         for key, setting in settings.items():
             if isinstance(setting,dict):
                 self.__logSettings(logger,setting)
             else:
-                logger.writeToLog(self.__descriptions[key].format(setting))
+                logger.writeToLog(" >" + self.__descriptions[key].format(setting))
 
     def logSettings(self, logger: Logger):
         if self.__onDefaultSettings:
             logger.writeToLog("No custom settings set! Running on default settings!")
-        self.__logSettings(logger,self.__settings,self.__descriptions)
+        self.__logSettings(logger,self.__settings)
 
     #Check whether all implemented commands have a rank and helpMessage.
     #Only checking this way around not vice versa, 

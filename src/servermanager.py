@@ -1,12 +1,12 @@
 from subprocess import Popen, PIPE
-from enum import Enum
+from enum import IntEnum
 from pathlib import Path
 import os
 
 class ServerManager:
     def __init__(self):
         self.__subprocess = None
-        self.__state = ServerState.DOWN
+        self.__state: IntEnum = ServerState.DOWN
         self.__serverargs = None
         self.__dirPath = None
         self.onServerStarted = None
@@ -17,8 +17,7 @@ class ServerManager:
         maxRAM = "-Xmx" + str(settings["maxRAM"]) + "G"
         self.__dirPath = Path(settings["serverPath"]).parent
         
-        args = [settings["javaPath"],minRAM,maxRAM,"-jar",settings["serverPath"]]
-        self.__server.setArgs(args)
+        self.__serverargs = [settings["javaPath"],minRAM,maxRAM,"-jar",settings["serverPath"]]
         return True
 
     #start the paper server
@@ -27,11 +26,11 @@ class ServerManager:
             return False
 
         self.__state = ServerState.PROCESSING
-        self.__subprocess = Popen(self.__serverargs, stdout=PIPE, stdin=PIPE, cwd=self.__dirPath)
+        self.__subprocess = Popen(self.__serverargs, stdout=PIPE, stdin=PIPE, stderr=PIPE, cwd=self.__dirPath)
         
         reader = self.__subprocess.stdout
         nextline = ""
-        while nextline.find("Done") == -1:
+        while nextline.find("Timings Reset") == -1:
             nextline = reader.readline().decode("utf-8")
 
         self.__state = ServerState.RUNNING
@@ -45,26 +44,26 @@ class ServerManager:
         self.__state = ServerState.PROCESSING
         reader = self.__subprocess.stdout
 
-        self.__subprocess.communicate(input="stop\n")
+        self.__subprocess.communicate(bytes("stop\n","utf-8"))
         while not reader.closed:
             pass
 
         self.__state = ServerState.DOWN
         return True
 
-    def getState(self) -> Enum:
+    def getState(self) -> IntEnum:
         return self.__state
 
     def getPlayerCount(self) -> int:
         if self.isDown() or self.isProcessing():
             raise RuntimeError("Unable to get players if server is not running!")
 
-        reader = self.__subprocess.stdout
-        self.__subprocess.communicate("list\n")
-        text: str = reader.readline().decode("utf-8")
+        self.__subprocess.stdin.write(bytes("list\n","utf-8"))
+        self.__subprocess.stdin.flush()
+        output = self.__subprocess.stdout.readline().decode("utf-8")
 
-        parts = text.split(" ")
-        playerCount = 0
+        parts = output.split(" ")
+        print(parts)
 
         for part in parts:
             try:
@@ -78,9 +77,8 @@ class ServerManager:
         if self.isDown() or self.isProcessing():
             raise RuntimeError("Unable print message if server is not running!")
 
-        self.__subprocess.communicate("say {}\n",format(message))
-
-        
+        self.__subprocess.stdin.write(bytes("say {}\n".format(message),"utf-8"))
+        self.__subprocess.stdin.flush()
 
     #force the exit of the server
     def forcekill(self):
@@ -90,7 +88,7 @@ class ServerManager:
 
     #Three functions which have the sole purpose of improving the code readibility
     def isRunning(self) -> bool:
-        if self.state > 1:
+        if self.__state > 1:
             return True
         return False
 
@@ -100,14 +98,14 @@ class ServerManager:
         return False
 
     def isDown(self) -> bool:
-        if self.state < 1:
+        if self.__state < 1:
             return True
         return False
 
 
 #State used to convey what the server is doing right now
 #Will be used to stop users from starting the server multiple times in a row, etc
-class ServerState(Enum):
+class ServerState(IntEnum):
     RUNNING = 2
     PROCESSING = 1
     DOWN = 0

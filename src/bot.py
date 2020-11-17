@@ -10,7 +10,7 @@ class ServerClient(discord.Client):
         self.onMessageCallback: callable = self.__onMessage
 
     async def __onMessage(self,message: discord.Message):
-        await message.channel.send("I am currently starting up. If this message concerns me please excuse me.")
+        pass
 
     async def on_ready(self):
         await self.onReadyCallback()

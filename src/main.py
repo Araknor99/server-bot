@@ -14,17 +14,17 @@ class LifeCycle:
 
     #Function to be called when a message arrives
     async def onMessageCallback(self,message):
-        botSettings = self.sManager.getBotSettings()
+        botSettings = self.utils.sManager.getBotSettings()
 
         channel = message.channel
         author: discord.Member = message.author
-        authorName = author.name + author.discriminator
-        
-        if self.utils.botClosing:
-            await channel.send("I am currently restarting or being shut down. Please wait a bit.")
-            return
+        authorName = author.name + "#" + author.discriminator
 
         if not self.interpreter.validContext(message):
+            return
+
+        if self.utils.botClosing:
+            await channel.send("I am currently restarting or being shut down. Please wait a bit.")
             return
 
         self.utils.writeToLog("Recieved message from user '{}'!".format(authorName))
@@ -40,7 +40,7 @@ class LifeCycle:
             await channel.send("You don't the permission to use that command!\nAsk a {}!".format(botSettings["checkRole"]))
             return
         
-        self.interpreter.executeCommand(message)
+        await self.interpreter.executeCommand()
 
     async def initializeUtils(self):
         if not self.utils.initSettings(sys.argv):
@@ -48,13 +48,14 @@ class LifeCycle:
             await self.dClient.close()
             sys.exit()
             
-        self.interpreter = CommandsManager(self.utils)
+        self.interpreter = CommandsManager(self.utils,self.dClient)
         if not self.utils.checkCommandIntegrity(self.interpreter.commandList):
             print("Error in command integrity! Some commands are not fully implemented!\nExiting...\n")
             await self.dClient.close()
             sys.exit()
-            
+
         self.dClient.onMessageCallback = self.onMessageCallback
+        self.utils.writeToLog("Ready!")
 
     #initiliaze discord interface
     def initializeDiscord(self):

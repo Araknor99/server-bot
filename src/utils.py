@@ -39,7 +39,6 @@ class Utils:
         self.server.setArgs(serverSettings)
 
         self.sManager.logSettings(self.logger)
-        self.writeToLog("Ready!")
         return True
 
     def reloadSettings(self):
@@ -47,13 +46,23 @@ class Utils:
         self.sManager.loadSettings(self.fileHandler)
         self.rwriteToLog("New settings loaded! Settings will take effect on server restart.")
 
+    def setOption(self,option,value):
+        self.writeToLog("Setting option {} to {}".format(option,value))
+        self.sManager.setOption(option,value)
+
     def interpretArgs(self, argv):
         self.writeToLog("Interpreting console arguments...")
         return self.sManager.interpretArgs(argv)
 
     def checkCommandIntegrity(self, commandList):
         self.writeToLog("Checking integrity of implemented commands...")
-        return self.sManager.checkCommandIntegrity(commandList)
+        errors = self.sManager.checkCommandIntegrity(commandList)
+
+        if errors != []:
+            for error in errors:
+                self.writeToLog("ERR: {}".format(error))
+            return False
+        return True
 
     def validateSettings(self):
         self.writeToLog("Validating settings...")
@@ -70,8 +79,12 @@ class Utils:
                 self.writeToLog("ERR: " + error)
             return False
         return True
-        
 
+    def saveSettings(self):
+        self.writeToLog("Saving settings to file!!\nCurrent settigns are:")
+        self.sManager.logSettings(self.logger)
+        self.sManager.saveSettings(self.fileHandler)
+        
     async def startServer(self):
         self.writeToLog("Trying to start server...\nCurrent settings are:")
         self.sManager.logSettings(self.logger)
@@ -94,7 +107,7 @@ class Utils:
 
         self.writeToLog("Server closed!")
         self.writeToLog("Dumping current settings to settings.json")
-        return False
+        return True
 
     #Close all utils and the server application
     async def closeBot(self):
