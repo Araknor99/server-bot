@@ -2,8 +2,8 @@
     "serverSettings":{
         "javaPath":"/usr/bin/java",
         "serverPath":"../server/paper.jar",
-        "minRAM":2,
-        "maxRAM":4
+        "minRAM":4,
+        "maxRAM":12
     },
     "botSettings":{
         "logPath":"log.txt",

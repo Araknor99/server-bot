@@ -12,12 +12,20 @@ import time
 import datetime
 
 class CommandsManager():
-    def __init__(self,utils: Utils):
+    def __init__(self, utils: Utils, disClient: ServerClient):
         self.commands = [State,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
         self.cCommand: Command = None
         self.utils = utils
+        self.disClient = disClient
+        self.commandList = self.__createCommandsList()
 
-    def validContext(self,message: discord.Message):
+    def __createCommandsList(self):
+        commandList = []
+        for whatCommand in self.commands:
+            command: Command = whatCommand(None,None,None,None)
+            commandList.append(command.name)
+
+    def validContext(self, message: discord.Message):
         botSettings = self.utils.sManager.getBotSettings()
         if message.channel.name != botSettings["standardChannel"]:
             return False
@@ -27,7 +35,7 @@ class CommandsManager():
 
         return True
 
-    def asParts(self,message: str):
+    def asParts(self, message: str):
         botSettings = self.utils.sManager.getBotSettings()
         checkSign = botSettings["checkSign"]
 
@@ -36,18 +44,18 @@ class CommandsManager():
 
         return parts
 
-    def findCommand(self,message: discord.Message):
+    def findCommand(self, message: discord.Message):
         name = self.asParts(message.content)[0]
 
         #ref as short for reference
         for ref in self.commands:
-            command = ref(self.asParts(message), message.channel, self.utils, self.cDeviceOp)
+            command = ref(self.asParts(message), message.channel, self.utils, self.disClient)
             if command.name == name:
                 self.cCommand = command
                 return True
         return False
 
-    def userHasPermission(self,message: discord.Message):
+    def userHasPermission(self, message: discord.Message):
         botSettings = self.utils.sManager.getBotSettings()
         cmdSettings = self.utils.sManager.getCmdRanks()
 
@@ -79,11 +87,12 @@ class CommandsManager():
 # The actual implementation of the commands #
 #############################################
 class Command(ABC):
-    def __init__(self, messageParts, channel, utils):
+    def __init__(self, messageParts, channel, utils, bot):
         self.name = ""
         self.messageParts: dict = messageParts
         self.channel: discord.TextChannel = channel
         self.utils: Utils = utils
+        self.bot: ServerClient = bot
         super().__init__()
 
     async def checkArgs(self) -> bool:
@@ -94,8 +103,8 @@ class Command(ABC):
         pass
 
 class State(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "state"
 
     async def execute(self):
@@ -113,15 +122,15 @@ class State(Command):
     
 
 class Ping(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "ping"
 
     async def execute(self):
         await self.channel.send("The current latency is {}ms!".format(int(self.utils.latency * 1000)))
 
 class Ip(Command):
-    def __init__(self, messageParts, channel, utils):
+    def __init__(self, messageParts, channel, utils, bot):
         super().init(messageParts, channel, utils, cDeviceOp)
         self.name = "ip"
 
@@ -130,8 +139,8 @@ class Ip(Command):
         await self.channel.send("The current IP of the server is: " + externalIP)
 
 class Help(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "help"
         self.message = "Commands:\n\n"
 
@@ -159,15 +168,15 @@ class Help(Command):
 
 
 class StartServer(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "startserver"
 
     async def execute(self):
         checkRole = self.utils.sManager.getBotSettings()["checkRole"]
         await self.channel.send("Trying to start server...")
 
-        if not self.utils.sManager.validateSettings():
+        if not self.utils.validateSettings():
             await self.channel.send("Cannot start server! Settings are invalid!\n Please contact someone with the role '{}'!".format(checkRole))
             return
 
@@ -178,8 +187,8 @@ class StartServer(Command):
         await self.channel.send("Server started! Have fun")
 
 class CloseServer(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "closeserver"
 
     async def execute(self):
@@ -189,8 +198,8 @@ class CloseServer(Command):
         await self.channel.send("Server Closed!")
 
 class ListArgs(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "listargs"
         self.message = "The settings are the following:\n"
 
@@ -203,14 +212,14 @@ class ListArgs(Command):
 
     async def execute(self):
         desc = self.utils.sManager.getDescriptions()
-        options = self.utils.sManager.getSettings()
+        options = self.utils.sManager.getServerSettings()
         self.__expandMessage(options, desc)
 
         await self.channel.send(self.message)
 
 class SetArg(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "setarg"
 
     async def checkArgs(self) -> bool:
@@ -243,8 +252,8 @@ class SetArg(Command):
         self.utils.sManager.setOption(setting,value)
 
 class RestartDevice(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "restartdevice"
 
     async def checkArgs(self) -> bool:
@@ -268,8 +277,8 @@ class RestartDevice(Command):
         
 
 class ShutdownDevice(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "shutdowndevice"
 
     async def checkArgs(self) -> bool:
@@ -292,8 +301,8 @@ class ShutdownDevice(Command):
         self.utils.scheduler.setEvent(timepoint,self.utils.restart)
 
 class CancelOperation(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "listargs"
 
     async def execute(self):
@@ -309,8 +318,8 @@ class CancelOperation(Command):
 
 #TODO: finish this function!
 class ListDeviceOp(Command):
-    def __init__(self, messageParts, channel, utils):
-        super().__init__(messageParts, channel, utils,)
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
         self.name = "listdeviceop"
         self.timeDiff: datetime.timedelta = None
 

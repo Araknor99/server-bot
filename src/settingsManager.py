@@ -73,7 +73,7 @@ class SettingsManager:
         return True
 
     #Gonna keep the compatibility for nested dicts in
-    def __setOption(self,option,value,dictionairy):
+    def __setOption(self,option,value,dictionairy: dict):
         for key,setting in dictionairy.items():
             if key == option:
                 if type(setting) != type(value):
@@ -84,7 +84,7 @@ class SettingsManager:
                 self.__setOption(option,value,dictionairy[key])
 
     def setOption(self,option,value):
-        return self.__setOption(option,value,self.__settings)
+        return self.__setOption(option,value,self.getServerSettings())
 
     def __checkForSetting(self, settingName, dic) -> bool:
         exists = False
@@ -101,7 +101,7 @@ class SettingsManager:
         return exists
 
     def checkForSetting(self,settingName) -> bool:
-        return self.__checkForSetting(settingName,self.__settings)
+        return self.__checkForSetting(settingName,self.getServerSettings())
 
     def __checkForSettingType(self, settingName, dic: dict) -> type:
         datatype = None
@@ -120,34 +120,29 @@ class SettingsManager:
     def checkForSettingType(self,settingName) -> type:
         return self.__checkForSettingType(settingName,self.__settings)
 
-    def __handlePrint(self, message, logger: Logger):
-        if logger != None:
-            logger.writeToLog(message)
-        print(message)
-
-    def validateSettings(self,logger):
-        self.__handlePrint("Validating settings...", logger)
-        if self.getServerSettings()["maxRAM"] < self.getServerSettings()["minRAM"]:
-            self.__handlePrint("Argument minRAM is bigger than maxRAM! Exiting...", logger)
-            return False
-        if self.getServerSettings()["minRAM"] < 0:
-            self.__handlePrint("Argumnet minRAM cannot be smaller or equal than zero!", logger)
-            return False
-        if self.getServerSettings()["maxRAM"] == self.getServerSettings()["minRAM"]:
-            self.__handlePrint("Argument maxRAM has to be bigger than minRAM!", logger)
-            return False
+    def validateCriticalSettings(self) -> list:
+        #Handle critical settings here to prevent crashes
+        errorMessages: list = []
         if type(self.getServerSettings()["minRAM"]) != int:
-            self.__handlePrint("Argument minRAM has to be an integer!", logger)
-            return False
+            errorMessages.append("Argument minRAM has to be an integer!")
         if type(self.getServerSettings()["maxRAM"]) != int:
-            self.__handlePrint("Argument maxRAM has to be an integer!", logger)
-            return False
+            errorMessages.append("Argument maxRAM has to be an integer!")
+        return errorMessages
+
+    def validateSettings(self) -> list:
+        #Handle settings here
+        errorMessages: list = []
+        if self.getServerSettings()["maxRAM"] < self.getServerSettings()["minRAM"]:
+            errorMessages.append("Argument minRAM is bigger than maxRAM!")
+        if self.getServerSettings()["minRAM"] < 0:
+            errorMessages.append("Argument minRAM cannot be smaller than or equal to zero!")
+        if self.getServerSettings()["maxRAM"] == self.getServerSettings()["minRAM"]:
+            errorMessages.append("Argument maxRAM has to be bigger than minRAM!")
         if self.getBotSettings()["standardChannel"] == "":
-            self.__handlePrint("No channel for listening has been set! Exiting...",logger)
-            return False
+            errorMessages.append("No channel set for listening!")
         if self.getBotSettings()["checkRole"] == "":
-            self.__handlePrint("No role set for restricted access commands! Exiting...",logger)
-        return True
+            errorMessages.append("No role set for restricted access commands!")
+        return errorMessages
 
     def __logSettings(self, settings, logger: Logger):
         for key, setting in settings.items():
@@ -161,26 +156,28 @@ class SettingsManager:
             logger.writeToLog("No custom settings set! Running on default settings!")
         self.__logSettings(logger,self.__settings,self.__descriptions)
 
-    #Check whether all the commands in the cmdRanks are in the helpMessages.json
-    #Will have to find a way to check whether all commands in commands.py are implemented in these files
-    def checkCommandIntegrity(self):
+    #Check whether all implemented commands have a rank and helpMessage.
+    #Only checking this way around not vice versa, 
+    #since a helpMessage or ranking for a unimplemented command does not cause a crash.
+    def checkCommandIntegrity(self, commandList) -> list:
         cmdRanks: dict = self.getCmdRanks()
         helpMessages: dict = self.getHelpMessages()
-        integrity = True
+        errors = []
 
+        helpMessagesCommandList = helpMessages.keys()
+        commandList = commandList
+        cmdRanksCommands = []
         for subdict in cmdRanks.values():
-            for command in subdict:
-                if command not in helpMessages.keys():
-                    print("Command {} from cmdRanks not present in helpMessages.json!".format(command))
-                    integrity = False
+            cmdRanksCommands += subdict
 
-        for command in helpMessages.keys():
-            for subdict in cmdRanks.values():
-                if command not in subdict:
-                    print("Command {} from helpMessages.json not present in cmdRanks!".format(command))
-                    integrity = False
+        for command in commandList:
+            if not command in helpMessagesCommandList:
+                errors.append("Command {} does not have a helpMessage!".format(command))
+            if not command in cmdRanksCommands:
+                errors.append("Command {} does not have a ranking!".format(command))
 
-        return integrity
+        return errors
+
 
     def getDescriptions(self) -> dict:
         return self.__descriptions

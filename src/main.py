@@ -27,16 +27,16 @@ class LifeCycle:
         if not self.interpreter.validContext(message):
             return
 
-        self.utils.logger.writeToLog("Recieved message from user '{}'!".format(authorName))
-        self.utils.logger.writeToLog("Message content:\n{}".format(message.content))
+        self.utils.writeToLog("Recieved message from user '{}'!".format(authorName))
+        self.utils.writeToLog("Message content:\n{}".format(message.content))
 
         if not self.interpreter.findCommand(message):
-            self.utils.logger.writeToLog("Given command is not valid!")
+            self.utils.writeToLog("Given command is not valid!")
             await channel.send("That is not a valid command!\nUse {}help to get a list!".format(botSettings["checkSign"]))
             return
 
         if not self.interpreter.userHasPermission(message):
-            self.utils.logger.writeToLog("User is not permitted to request the given command!")
+            self.utils.writeToLog("User is not permitted to request the given command!")
             await channel.send("You don't the permission to use that command!\nAsk a {}!".format(botSettings["checkRole"]))
             return
         
@@ -44,11 +44,16 @@ class LifeCycle:
 
     async def initializeUtils(self):
         if not self.utils.initSettings(sys.argv):
-            print("Something went wrong while initialising the settings!")
+            print("Something went wrong while initialising the utilities! Check your arguments and config files!\nExiting...\n")
             await self.dClient.close()
             sys.exit()
             
         self.interpreter = CommandsManager(self.utils)
+        if not self.utils.checkCommandIntegrity(self.interpreter.commandList):
+            print("Error in command integrity! Some commands are not fully implemented!\nExiting...\n")
+            await self.dClient.close()
+            sys.exit()
+            
         self.dClient.onMessageCallback = self.onMessageCallback
 
     #initiliaze discord interface
