@@ -341,7 +341,7 @@ class ListDeviceOp(Command):
             return
 
         s = self.timeDiff.seconds % 60
-        m = int(s/60)
+        m = int(self.timeDiff.seconds/60)
 
         if self.utils.scheduler.getEventType() == "restartdevice":
             await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
@@ -361,6 +361,6 @@ class QuitBot(Command):
             return
         
         self.utils.closeBot()
-        await self.channel.send("Bot will now go offline!")
+        await self.channel.send("Bot is now offline!")
         await self.bot.close()
         sys.exit()
