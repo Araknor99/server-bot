@@ -133,12 +133,12 @@ class Utils:
     def shutdown(self):
         self.writeToLog("Shutting down!")
         self.closeBot()
-        os.system("shutdown now -h")
+        os.system("shutdown 0")
 
     def restart(self):
         self.writeToLog("Restarting!")
         self.closeBot()
-        os.system("shutdown -r")
+        os.system("shutdown -r 0")
         
     #relay message to server
     async def relayMessage(self, message):
