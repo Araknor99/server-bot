@@ -114,9 +114,7 @@ class State(Command):
     async def execute(self):
         state = self.utils.server.getState()
 
-        if state == ServerState.KILLED:
-            await self.channel.send("Server process has been killed! Did something happen?")
-        elif state == ServerState.DOWN:
+        if state == ServerState.DOWN:
             await self.channel.send("The server is currently offline.")
         elif state == ServerState.RUNNING:
             playerCount = self.utils.server.getPlayerCount()

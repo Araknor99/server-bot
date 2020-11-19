@@ -17,7 +17,7 @@ class ServerManager:
         maxRAM = "-Xmx" + str(settings["maxRAM"]) + "G"
         self.__dirPath = Path(settings["serverPath"]).parent
         
-        self.__serverargs = [settings["javaPath"],minRAM,maxRAM,"-jar",settings["serverPath"]]
+        self.__serverargs = ["sudo",settings["javaPath"],minRAM,maxRAM,"-jar",settings["serverPath"]]
         return True
 
     #start the paper server
