@@ -306,7 +306,7 @@ class ShutdownDevice(Command):
             self.utils.relayMessage("Shutting down in {} minutes!".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes = self.time)
-        self.utils.scheduler.setEvent(timepoint,self.utils.restart)
+        self.utils.scheduler.setEvent(timepoint,self.utils.shutdown)
 
 class CancelOperation(Command):
     def __init__(self, messageParts, channel, utils, bot):
