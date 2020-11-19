@@ -33,7 +33,6 @@ class ServerManager:
             nextline = reader.readline().decode("utf-8")
 
         self.__state = ServerState.RUNNING
-        print(self.__state)
         return True
 
     #close the paper server

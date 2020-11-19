@@ -278,10 +278,11 @@ class RestartDevice(Command):
             return
 
         if self.utils.server.isRunning():
-            self.utils.relayMessage("Restarting in {} minutes!".format(self.time))
-        
+            self.utils.relayMessage("Restarting in {} minute(s)!".format(self.time))
+        await self.channel.send("Restarting in {} minute(s)!".format(self.time))
+
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes=self.time)
-        self.utils.scheduler.setEvent(timepoint,self.utils.restart)
+        self.utils.scheduler.setEvent(timepoint,self.utils.restart,self.name)
         
 
 class ShutdownDevice(Command):
@@ -303,10 +304,11 @@ class ShutdownDevice(Command):
             return
         
         if self.utils.server.isRunning():
-            self.utils.relayMessage("Shutting down in {} minutes!".format(self.time))
+            self.utils.relayMessage("Shutting down in {} minute(s)!".format(self.time))
+        await self.channel.send("Shutting down in {} minute(s)".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes = self.time)
-        self.utils.scheduler.setEvent(timepoint,self.utils.shutdown)
+        self.utils.scheduler.setEvent(timepoint,self.utils.shutdown,self.name)
 
 class CancelOperation(Command):
     def __init__(self, messageParts, channel, utils, bot):
@@ -344,7 +346,7 @@ class ListDeviceOp(Command):
         if self.utils.scheduler.getEventType() == "restartdevice":
             await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
         elif self.utils.scheduler.getEventType() == "shutdowndevice":
-            await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
+            await self.channel.send("Planning a shutdown of the device in {} minutes and {} seconds!".format(m,s))
 
 class QuitBot(Command):
     def __init__(self, messageParts, channel, utils, bot):
