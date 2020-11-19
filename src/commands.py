@@ -272,6 +272,11 @@ class RestartDevice(Command):
 
     async def __onEvent(self):
         await self.channel.send("Restarting now!\nClosing server if open...")
+        self.utils.restart()
+
+    def __onEventSync(self):
+        fut = asyncio.run_coroutine_threadsafe(self.__onEvent(),self.bot.loop)
+        fut.result()
 
     async def execute(self):
         if self.utils.scheduler.eventScheduled():
@@ -283,7 +288,7 @@ class RestartDevice(Command):
         await self.channel.send("Restarting in {} minute(s)!".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes=self.time)
-        self.utils.scheduler.setEvent(timepoint,self.__onEvent,self.name)
+        self.utils.scheduler.setEvent(timepoint,self.__onEventSync,self.name)
         
 
 class ShutdownDevice(Command):
@@ -300,9 +305,13 @@ class ShutdownDevice(Command):
         return True
 
     async def __onEvent(self):
-        await self.channel.write("Shutting down now!\nClosing server if open...")
+        await self.channel.send("Shutting down now!\nClosing server if open...")
         self.utils.shutdown()
     
+    def __onEventSync(self):
+        fut = asyncio.run_coroutine_threadsafe(self.__onEvent(),self.bot.loop)
+        fut.result()
+
     async def execute(self):
         if self.utils.scheduler.eventScheduled():
             await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
@@ -313,7 +322,7 @@ class ShutdownDevice(Command):
         await self.channel.send("Shutting down in {} minute(s)".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes = self.time)
-        self.utils.scheduler.setEvent(timepoint,self.__onEvent,self.name)
+        self.utils.scheduler.setEvent(timepoint,self.__onEventSync,self.name)
 
 class CancelOperation(Command):
     def __init__(self, messageParts, channel, utils, bot):

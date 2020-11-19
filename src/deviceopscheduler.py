@@ -9,7 +9,7 @@ class DeviceOpScheduler:
         self.cOp: str = ""
         self.scheduledTime: datetime.datetime = None
         self.timeOfSchedule: datetime.datetime = None
-        self.onEventfunc: callable = None
+        self.onEventfunc = None
         self.__timeThread: threading.Thread = None
 
     def setEvent(self, time: datetime.datetime, funcToCall: callable, type: str):
@@ -38,11 +38,7 @@ class DeviceOpScheduler:
         self.__timeThread.start()
 
     def __execFunc(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        loop.run_until_complete(self.onEventfunc)
-        loop.close()
+        self.onEventfunc()
 
         self.__clearEvent()
         self.__timeThread = None
