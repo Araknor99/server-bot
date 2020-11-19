@@ -1,45 +1,75 @@
-from sched import scheduler,Event
-
 import time
 import datetime
+import threading
+import sys
 
 class DeviceOpScheduler:
     def __init__(self):
-        self.cOp: str = None
-        self.scheduler: scheduler = scheduler(datetime.datetime,time.sleep)
+        self.cOp: str = ""
         self.scheduledTime: datetime.datetime = None
         self.timeOfSchedule: datetime.datetime = None
         self.onEventfunc: callable = None
+        self.__timeThread: threading.Thread = None
 
-    def setEvent(self,timePoint: datetime.datetime,onEventfunc: callable):
-        if self.eventScheduled():
-            raise RuntimeError("DeviceOpScheduler does not support adding more than one event!")
+    def setEvent(self, time: datetime.datetime, funcToCall: callable):
+        self.scheduledTime = time
         self.timeOfSchedule = datetime.datetime.now()
-        self.scheduledTime = timePoint
-        self.onEventfunc = onEventfunc
-        self.scheduler.enterabs(self.scheduledTime,0,self.onEventfunc)
+        self.onEventfunc = funcToCall
+        self.__runTimeThread()
 
-    def clearEvent(self):
-        if not self.eventScheduled():
-            raise RuntimeError("Trying to cancel event with no event scheduled!")
-        self.scheduler.cancel(self.scheduler.queue[0])
-        self.onEventfunc = None
+    def stopScheduledOp(self):
+        self.__clearEvent()
+        self.__stopThread()
+
+    def __clearEvent(self):
         self.scheduledTime = None
         self.timeOfSchedule = None
-        self.cOp = None
+        self.onEventfunc = None
 
-    def when(self) -> datetime.datetime:
-        return self.scheduledTime
+    def __stopThread(self):
+        self.__timeThread.do_run = False
+        self.__timeThread = None
 
-    def howLongTill(self) -> datetime.timedelta:
-        if self.scheduledTime == None:
-            return None
-        return self.scheduledTime - self.timeOfSchedule
+    def __runTimeThread(self):
+        self.__timeThread = threading.Thread(target=self.__loopFunc)
+        self.__timeThread.start()
+
+    def __execFunc(self):
+        self.onEventfunc()
+        self.__clearEvent()
+        self.__timeThread = None
+
+    def __loopFunc(self):
+        while True:
+            t = threading.current_thread()
+            shouldStop = getattr(t,"do_run", False)
+            if shouldStop:
+                break
+            
+            scheduledTime = datetime.datetime.now()
+            if scheduledTime >= self.scheduledTime:
+                self.__execFunc()
+                break
+
+            time.sleep(0.5)
+
+        self.__timeThread = None
+        sys.exit(0)
 
     def eventScheduled(self) -> bool:
-        if len(self.scheduler.queue) > 0:
-            return True
-        return False
+        return bool(self.__timeThread)
 
-    def getEventType(self) -> str:
+    def getScheduledTime(self) -> datetime.datetime:
+        return self.scheduledTime
+
+    def getTimeOfSchedule(self) -> datetime.datetime:
+        return self.timeOfSchedule
+
+    def howLongTill(self) -> datetime.timedelta:
+        if not self.eventScheduled():
+            return None
+        
+        return self.scheduledTime - datetime.datetime.now()
+
+    def getEventType(self):
         return self.cOp

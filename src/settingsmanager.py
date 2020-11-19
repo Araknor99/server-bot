@@ -23,6 +23,7 @@ class SettingsManager:
         try:
             self.__settings = fileHandler.loadJSON(path)
         except:
+            print("Unable to load settings.json. Switching to defaultSettings.json")
             path = "../settings/defaultSettings.json"
             self.__settings = fileHandler.loadJSON(path)
         
@@ -154,7 +155,7 @@ class SettingsManager:
             if isinstance(setting,dict):
                 msg += self.__logSettings(setting)
             else:
-                msg += "    >" + self.__descriptions[key].format(setting) + "\n"
+                msg += "    >" + key + ": " + self.__descriptions[key].format(setting) + "\n"
         return msg
 
     def logSettings(self):

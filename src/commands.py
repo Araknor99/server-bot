@@ -11,10 +11,11 @@ import urllib.request
 import asyncio
 import time
 import datetime
+import sys
 
 class CommandsManager():
     def __init__(self, utils: Utils, disClient: ServerClient):
-        self.commands = [State,Ping,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp]
+        self.commands = [State,Ping,Ip,Help,StartServer,CloseServer,RestartDevice,ShutdownDevice,ListArgs,CancelOperation,SetArg,ListDeviceOp,QuitBot]
         self.cCommand: Command = None
         self.utils = utils
         self.disClient = disClient
@@ -179,7 +180,7 @@ class StartServer(Command):
     async def execute(self):
         await self.channel.send("Trying to start server. This might take a while...")
 
-        if not await self.utils.startServer():
+        if not self.utils.startServer():
             await self.channel.send("Cannot start server! Please check state and settings!")
             return
         await self.channel.send("Server started! Have fun!")
@@ -191,7 +192,7 @@ class CloseServer(Command):
 
     async def execute(self):
         await self.channel.send("Trying to close server. This might take a while...")
-        if not await self.utils.closeServer():
+        if not self.utils.closeServer():
             await self.channel.send("Unable to close server! Is it already offline or shutting down?")
             return
         await self.channel.send("Server Closed!")
@@ -200,19 +201,27 @@ class ListArgs(Command):
     def __init__(self, messageParts, channel, utils, bot):
         super().__init__(messageParts, channel, utils, bot)
         self.name = "listargs"
-        self.message = "The settings are the following:\n"
+        self.message = "The settings are the following:\n```"
+        self.volume = 0
 
     def __expandMessage(self, options: dict, desc: dict):
         for key,value in options.items():
             if isinstance(value,dict):
                 self.__expandMessage(options[key],desc)
             else:
-                self.message += "    " + desc[key].format(value) + "\n"
+                description = desc[key].format(value)
+                argLength = len(key)
+
+                self.message += "    > {}{} - {}\n".format(key, (self.volume-argLength) * " ", description)
 
     async def execute(self):
         desc = self.utils.sManager.getDescriptions()
         options = self.utils.sManager.getServerSettings()
+
+        self.volume = len(max(options.keys(),key=len)) + 1
+
         self.__expandMessage(options, desc)
+        self.message += "```"
 
         await self.channel.send(self.message)
 
@@ -311,7 +320,7 @@ class CancelOperation(Command):
             await self.channel.send("Currently no device operation planned!\n Use '{}listdeviceop'".format(checkSign))
             return
 
-        self.utils.scheduler.clearEvent()
+        self.utils.scheduler.stopScheduledOp()
         await self.channel.send("Scheduled event has been canceled!")
         
 
@@ -336,3 +345,20 @@ class ListDeviceOp(Command):
             await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
         elif self.utils.scheduler.getEventType() == "shutdowndevice":
             await self.channel.send("Planning a restart of the device in {} minutes and {} seconds!".format(m,s))
+
+class QuitBot(Command):
+    def __init__(self, messageParts, channel, utils, bot):
+        super().__init__(messageParts, channel, utils, bot)
+        self.name = "quitbot"
+
+    async def execute(self):
+        await self.channel.send("Closing bot...")
+
+        if self.utils.server.isRunning():
+            await self.channel.send("Please close the server before closing the bot!")
+            return
+        
+        self.utils.closeBot()
+        await self.channel.send("Bot will now go offline!")
+        await self.bot.close()
+        sys.exit()

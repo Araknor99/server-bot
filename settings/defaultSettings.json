@@ -25,6 +25,7 @@
             "listargs",
             "setarg",
             "canceloperation",
-            "listdeviceop"]
+            "listdeviceop",
+            "quitbot"]
     }
 }

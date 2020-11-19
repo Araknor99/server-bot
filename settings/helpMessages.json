@@ -10,5 +10,6 @@
     "listargs":"Will list all Settings regarding the server.",
     "setarg":"Usage: {}setarg <option> <value> | Will set the given option to the given value.",
     "canceloperation":"Will cancel the device operation you have currently planned.",
-    "listdeviceop":"Will print the current device operation (if there is one)."
+    "listdeviceop":"Will print the current device operation (if there is one).",
+    "quitbot":"Will close the bot application. Only use this if you know what you are doing."
 }

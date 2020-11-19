@@ -81,7 +81,7 @@ class Utils:
         return True
 
     def saveSettings(self):
-        self.writeToLog("Saving settings to file!\nCurrent settings are:")
+        self.writeToLog("Saving settings to file!")
         self.logSettings()
         self.sManager.saveSettings(self.fileHandler)
 
@@ -106,7 +106,7 @@ class Utils:
         self.writeToLog("Server started!")
         return True
 
-    async def closeServer(self):
+    def closeServer(self):
         self.writeToLog("Trying to close Server...")
 
         if not self.server.closeServer():
@@ -118,7 +118,7 @@ class Utils:
         return True
 
     #Close all utils and the server application
-    async def closeBot(self):
+    def closeBot(self):
         self.botClosing = True
 
         self.writeToLog("Quitting bot!")
@@ -126,19 +126,19 @@ class Utils:
             self.relayMessage("Server is shutting down!")
             self.closeServer()
 
-        self.logSettings(self.logger)
-        self.sManager.saveSettings(self.logger)
-        self.logger.endLog(self)
+        self.logSettings()
+        self.saveSettings()
+        self.logger.endLog()
 
-    async def shutdown(self):
+    def shutdown(self):
         self.writeToLog("Shutting down!")
-        await self.closeBot()
-        os.system("shutdown now")
+        self.closeBot()
+        os.system("shutdown now -h")
 
-    async def restart(self):
+    def restart(self):
         self.writeToLog("Restarting!")
-        await self.closeBot()
-        os.system("shutdown -r 0")
+        self.closeBot()
+        os.system("shutdown -r")
         
     #relay message to server
     async def relayMessage(self, message):
