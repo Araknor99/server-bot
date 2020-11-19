@@ -91,7 +91,7 @@ class Utils:
         msg = "Current settings: \n" + self.sManager.logSettings()
         self.writeToLog(msg)
         
-    async def startServer(self):
+    def startServer(self):
         self.writeToLog("Trying to start server...")
 
         self.validateSettings()
