@@ -29,7 +29,7 @@ class DeviceOpScheduler:
         self.onEventfunc = None
 
     def __stopThread(self):
-        self.__timeThread.do_run = False
+        self.__timeThread.do_run = True
         self.__timeThread = None
 
     def __runTimeThread(self):

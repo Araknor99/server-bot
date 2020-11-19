@@ -340,7 +340,7 @@ class ListDeviceOp(Command):
             await self.channel.send("There is currently no operation scheduled!")
             return
 
-        s = self.timeDiff.seconds
+        s = self.timeDiff.seconds % 60
         m = int(s/60)
 
         if self.utils.scheduler.getEventType() == "restartdevice":
