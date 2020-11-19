@@ -122,7 +122,7 @@ class Utils:
         self.botClosing = True
 
         self.writeToLog("Quitting bot!")
-        if self.server.isRunning:
+        if self.server.isRunning():
             self.relayMessage("Server is shutting down!")
             self.closeServer()
 
@@ -141,6 +141,6 @@ class Utils:
         os.system("shutdown -r 0")
         
     #relay message to server
-    async def relayMessage(self, message):
-        self.writeToLog("Relaying message to server! Content is:{}".format(message))
+    def relayMessage(self, message):
+        self.writeToLog("Relaying message to server! Content is: {}".format(message))
         self.server.printMessage(message)

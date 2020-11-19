@@ -2,6 +2,7 @@ import time
 import datetime
 import threading
 import sys
+import asyncio
 
 class DeviceOpScheduler:
     def __init__(self):
@@ -37,7 +38,12 @@ class DeviceOpScheduler:
         self.__timeThread.start()
 
     def __execFunc(self):
-        self.onEventfunc()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        loop.run_until_complete(self.onEventfunc)
+        loop.close()
+
         self.__clearEvent()
         self.__timeThread = None
 

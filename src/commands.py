@@ -118,7 +118,7 @@ class State(Command):
             await self.channel.send("The server is currently offline.")
         elif state == ServerState.RUNNING:
             playerCount = self.utils.server.getPlayerCount()
-            await self.channel.send("The server is online!\nThere are currently {} players on it!".format(playerCount))
+            await self.channel.send("The server is online!\nThere is/are currently {} player(s) on it!".format(playerCount))
     
 
 class Ping(Command):
@@ -270,6 +270,9 @@ class RestartDevice(Command):
         self.time = int(self.messageParts[1])
         return True
 
+    async def __onEvent(self):
+        await self.channel.send("Restarting now!\nClosing server if open...")
+
     async def execute(self):
         if self.utils.scheduler.eventScheduled():
             await self.channel.send("Device Operation already scheduled! Cancel it to set another!")
@@ -280,7 +283,7 @@ class RestartDevice(Command):
         await self.channel.send("Restarting in {} minute(s)!".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes=self.time)
-        self.utils.scheduler.setEvent(timepoint,self.utils.restart,self.name)
+        self.utils.scheduler.setEvent(timepoint,self.__onEvent,self.name)
         
 
 class ShutdownDevice(Command):
@@ -295,6 +298,10 @@ class ShutdownDevice(Command):
 
         self.time = int(self.messageParts[1])
         return True
+
+    async def __onEvent(self):
+        await self.channel.write("Shutting down now!\nClosing server if open...")
+        self.utils.shutdown()
     
     async def execute(self):
         if self.utils.scheduler.eventScheduled():
@@ -306,7 +313,7 @@ class ShutdownDevice(Command):
         await self.channel.send("Shutting down in {} minute(s)".format(self.time))
 
         timepoint = datetime.datetime.now() + datetime.timedelta(minutes = self.time)
-        self.utils.scheduler.setEvent(timepoint,self.utils.shutdown,self.name)
+        self.utils.scheduler.setEvent(timepoint,self.__onEvent,self.name)
 
 class CancelOperation(Command):
     def __init__(self, messageParts, channel, utils, bot):

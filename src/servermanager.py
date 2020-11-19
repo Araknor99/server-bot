@@ -58,7 +58,10 @@ class ServerManager:
 
         self.__subprocess.stdin.write(bytes("list\n","utf-8"))
         self.__subprocess.stdin.flush()
-        output = self.__subprocess.stdout.readline().decode("utf-8")
+
+        output: str = self.__subprocess.stdout.readline().decode("utf-8")
+        while output.find("There are") == -1 and output.find("players") == -1:
+            output = self.__subprocess.stdout.readline().decode("utf-8")
 
         parts = output.split(" ")
         print(parts)
